@@ -12,12 +12,12 @@ class ericcode:
     oristring = ''
     def retstr(self) -> str:
         returnstring = ''.join(self.eric)
-        if len(returnstring) - len(self.oristring) == 1 and returnstring[-1] != 0 or len(returnstring) < 6:
+        if (len(returnstring) - len(self.oristring) == 1 and returnstring[-1] != 0) or (len(returnstring) < 6 and returnstring[-1] != 0):
             returnstring = returnstring + '0'
         return returnstring
     def __init__(self, code: str) -> None:
         self.oristring = code
-        self.eric = map(str,[self.mapping[c] for c in (code.lower() if isinstance(code, str) else str(code))])
+        self.eric = list(map(str,[self.mapping[c] for c in (code.lower() if isinstance(code, str) else str(code))]))
     def __len__(self) -> int:
         return len(''.join(self.eric))
     def __str__(self) -> str:
@@ -26,7 +26,7 @@ class ericcode:
         #     returnstring = returnstring + '0'
         #     if len(eric) - len(name) == 1 or len(eric) < 6:
         # eric = eric + '0'
-        if len(returnstring) - len(self.oristring) == 1 and returnstring[-1] != 0 or len(returnstring) < 6:
+        if ((len(returnstring) - len(self.oristring) == 1 or len(returnstring) < 6) and returnstring[-1] != "0") :
             returnstring = returnstring + '0'
         return returnstring
     def __int__(self) -> int:
@@ -670,12 +670,21 @@ $stoplist2
         """
         # Create a lookup dictionary for O(1) access. This is much faster.
         stop_name_to_id_map = {stop.name: stop.busstopID for stop in self.stopreporter}
+
+        def _ensure_id_list_size(busstop_list) -> None:
+            if len(busstop_list.bustops_withid) != len(busstop_list._busstops):
+                busstop_list.bustops_withid = [""] * len(busstop_list._busstops)
     
         for info in self.infosystem:
+            _ensure_id_list_size(info.busstop_list1_class)
+            _ensure_id_list_size(info.busstop_list2_class)
             # Process first bus stop list
             for index, stop_name in enumerate(info.busstop_list1_class.db_export):
+                existing_id = info.busstop_list1_class.bustops_withid[index]
+                if existing_id:
+                    continue
                 busstop_id = stop_name_to_id_map.get(stop_name)
-                if busstop_id is not None:
+                if busstop_id:
                     info.busstop_list1_class.bustops_withid[index] = busstop_id
                 else:
                     if info.busstop_list1_class._busstops[index] == "":
@@ -685,8 +694,11 @@ $stoplist2
     
             # Process second bus stop list
             for index, stop_name in enumerate(info.busstop_list2_class.db_export):
+                existing_id = info.busstop_list2_class.bustops_withid[index]
+                if existing_id:
+                    continue
                 busstop_id = stop_name_to_id_map.get(stop_name)
-                if busstop_id is not None:
+                if busstop_id:
                     info.busstop_list2_class.bustops_withid[index] = busstop_id
                 else:
                     if info.busstop_list2_class._busstops[index] == "":
@@ -882,13 +894,13 @@ $stoplist2
                         eric1 = lines[i+2]
                         out1 = param1[0].strip()
                     else:
-                        eric1 = param1[0].strip()
+                        eric1 = param1[1].strip()
                         out1 = param1[1].strip()
                     hof_entry.add_terminus(
                         False,
-                        lines[i + 1],
-                        # lines[i + 2],
                         eric1,
+                        lines[i + 2],
+                        # eric1,
                         lines[i + 3],
                         lines[i + 4 : i + 8][::-1],
                         out1
@@ -924,6 +936,7 @@ $stoplist2
                         chi_sec, eng_sec = 0, 0
                         time_parts = lines[i + 3].split()
                         if len(time_parts) >= 1:
+                            print(stop_name)
                             chi_sec = int(time_parts[0])
                         if len(time_parts) >= 2 and time_parts[1].isdigit():
                             eng_sec = int(time_parts[1])

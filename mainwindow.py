@@ -349,6 +349,7 @@ class Main(QMainWindow):
             self.ui.actionOpen_TTL_for_Route.triggered.connect(lambda: Main.raise_unimplemented())  
             self.ui.actionEric_Guesser.triggered.connect(self.open_eric_guesser)
             self.ui.actionExport_HOF_v2.triggered.connect(self.export_hof_v2)
+            self.ui.actionReset_Busstop_List_IDs.triggered.connect(self.reset_bsl_ids)
             # self.ui.act
             #----                               ----#
             # thread = Thread(target=self.update_listviews_every_3_minutes)
@@ -741,17 +742,39 @@ class Main(QMainWindow):
             for i, stop in enumerate(Main.hof_class.stopreporter):
                 self.busstop_id_to_index[stop.busstopID] = i
             
-            # Refresh the current bus stop list display
-            self.get_bsl()
+            # Refresh the current bus stop list display only if there are routes
+            if Main.hof_class.infosystem:
+                self.get_bsl()
         
         def add_bs_from_list(self,bs:list[str]) -> None:
             for i in bs:
                 Main.hof_class.add_stopreporter(f"{i}", f"{i}", 0, 0, -1.0, -1.0)
-                self.ui.listWidget_3.addItem(f"{i}")
+                # Add to UI
+                stop_index = len(Main.hof_class.stopreporter) - 1
+                stop = Main.hof_class.stopreporter[stop_index]
+                item = QListWidgetItem(stop.name)
+                item.setData(Qt.ItemDataRole.UserRole, stop.busstopID)
+                self.ui.listWidget_3.addItem(item)
+                # Update the busstop_id_to_index dictionary
+                self.busstop_id_to_index[stop.busstopID] = stop_index
             Main.hof_class.fill_busttoplist_with_id()
-            self.add_bs_to_dict()  # Update the busstop_id_to_index dictionary
 
 
+        def reset_bsl_ids(self) -> None:
+            for rt in Main.hof_class.infosystem:
+                bsl1 = rt.busstop_list1_class._busstops
+                bsl2 = rt.busstop_list2_class._busstops
+                rt.busstop_list1_class.bustops_withid = [""] * len(bsl1)
+                rt.busstop_list2_class.bustops_withid = [""] * len(bsl2)
+                print(rt.busstop_list2_class.bustops_withid)
+                for index, i in enumerate(bsl1):
+                    rt.busstop_list1_class.bustops_withid[index] = self.stop_name_to_id_map.get(i, "")
+                for index, i in enumerate(bsl2):
+                    rt.busstop_list2_class.bustops_withid[index] = self.stop_name_to_id_map.get(i, "")
+                
+        
+        
+        
         def del_bs_from_sel(self):
             item = self.ui.listWidget.currentIndex()
             index = item.row()
@@ -981,8 +1004,23 @@ class Main(QMainWindow):
             print(f"Current route index: {index_2}")
             self.ui.listWidget.clear()
             
-            bs_ids = (Main.hof_class.infosystem[index].busstop_list1_class.bustops_withid if self.bus_rt_direction == 1
-                    else Main.hof_class.infosystem[index].busstop_list2_class.bustops_withid)
+            # Check if infosystem is empty or index is invalid
+            if not Main.hof_class.infosystem or index < 0 or index >= len(Main.hof_class.infosystem):
+                return
+            
+            info = Main.hof_class.infosystem[index]
+            if self.bus_rt_direction == 1:
+                bs_ids = info.busstop_list1_class.bustops_withid
+                bs_names = info.busstop_list1_class._busstops
+            else:
+                bs_ids = info.busstop_list2_class.bustops_withid
+                bs_names = info.busstop_list2_class._busstops
+
+            if len(bs_ids) != len(bs_names):
+                if len(bs_ids) < len(bs_names):
+                    bs_ids.extend([""] * (len(bs_names) - len(bs_ids)))
+                else:
+                    del bs_ids[len(bs_names):]
             
             missing_bus_stops = []
             
@@ -991,20 +1029,29 @@ class Main(QMainWindow):
                 
                 # Only try lookup by bus stop ID - no fallback
                 busstop_index = self.busstop_id_to_index.get(each)
+                if busstop_index is None and i < len(bs_names):
+                    stop_name = bs_names[i]
+                    if stop_name:
+                        fallback_id = self.stop_name_to_id_map.get(stop_name)
+                        if fallback_id:
+                            bs_ids[i] = fallback_id
+                            busstop_index = self.busstop_id_to_index.get(fallback_id)
+
                 if busstop_index is not None:
                     busstop_obj = Main.hof_class.stopreporter[busstop_index]
                     # Create list item with the bus stop name and store the ID as data
                     item = QListWidgetItem(busstop_obj.name)
-                    item.setData(Qt.ItemDataRole.UserRole, each)  # Store the busstopID directly
+                    item.setData(Qt.ItemDataRole.UserRole, bs_ids[i])  # Store the busstopID directly
                     self.ui.listWidget.addItem(item)
                 else:
-                    if Main.hof_class.infosystem[index].db_export_bsl1[i] == '' and self.bus_rt_direction == 1: 
-                        # If the bus stop ID is empty, skip it
+                    if i < len(bs_names) and bs_names[i] == '':
                         continue
-                    elif Main.hof_class.infosystem[index].db_export_bsl2[i] == '' and self.bus_rt_direction == 2:
-                        continue
-                    else:
-                        missing_bus_stops.append(i)
+                    item_text = bs_names[i] if i < len(bs_names) else ''
+                    if item_text:
+                        item = QListWidgetItem(item_text)
+                        item.setData(Qt.ItemDataRole.UserRole, "")
+                        self.ui.listWidget.addItem(item)
+                    missing_bus_stops.append(i)
             
             # Show error message if there are missing bus stops
             if missing_bus_stops:
@@ -1053,9 +1100,10 @@ class Main(QMainWindow):
             
             Main.hof_class.name = Main.hofname
             
-            # Ensure blank stops exist
-            self._ensure_blank_stops_exist()
-            self.reload_bslist_id()
+            # Ensure blank stops exist if we have any routes
+            if Main.hof_class.infosystem:
+                self._ensure_blank_stops_exist()
+                self.reload_bslist_id()
             
             # Process all infosystem entries
             for info in Main.hof_class.infosystem:
@@ -1105,30 +1153,45 @@ class Main(QMainWindow):
             """Add appropriate blank terminator based on route length"""
             if not busstop_names:
                 return
+            
+            # Remove empty strings from the end (check last 3 stops)
+            for _ in range(3):  # Check up to 3 times
+                if busstop_names and busstop_names[-1] == "":
+                    busstop_names.pop()
+                    busstop_ids.pop()
+                else:
+                    break
+            
+            if not busstop_names:
+                return
                 
             # Count effective stops (non-hidden)
             effective_stop = sum(1 for stop in busstop_names if not stop.startswith("_"))
             
-            # Handle 40+ stops with blank_2pages
-            if effective_stop >= 40:
-                last_stop = busstop_names[-1].lower() if busstop_names else ""
-                if last_stop != "blank_2pages" and last_stop != "blank":
-                    # Add blank_2pages terminator
-                    busstop_names.append("blank_2pages")
-                    blank_id = self._get_blank_id("blank_2pages")
-                    busstop_ids.append(blank_id)
-                elif last_stop == "blank":
-                    # Replace blank with blank_2pages
-                    busstop_names[-1] = "blank_2pages"
-                    blank_id = self._get_blank_id("blank_2pages")
-                    busstop_ids[-1] = blank_id
-            # Handle regular case with blank
-            else:
-                last_stop = busstop_names[-1].lower() if busstop_names else ""
-                if last_stop != "blank":
-                    busstop_names.append("blank")
-                    blank_id = self._get_blank_id("blank")
-                    busstop_ids.append(blank_id)
+            # Determine which terminator we need
+            needed_terminator = "blank_2pages" if effective_stop >= 40 else "blank"
+            wrong_terminator = "blank" if effective_stop >= 40 else "blank_2pages"
+            
+            # Get last 3 stops indices
+            last_three_count = min(3, len(busstop_names))
+            start_index = len(busstop_names) - last_three_count
+            
+            # Remove wrong terminators and track if we have the correct one
+            has_correct = False
+            for i in range(len(busstop_names) - 1, start_index - 1, -1):
+                if i >= 0:
+                    stop_lower = busstop_names[i].lower()
+                    if stop_lower == needed_terminator:
+                        has_correct = True
+                    elif stop_lower == wrong_terminator:
+                        busstop_names.pop(i)
+                        busstop_ids.pop(i)
+            
+            # If we don't have the correct terminator, add it at the end
+            if not has_correct:
+                busstop_names.append(needed_terminator)
+                blank_id = self._get_blank_id(needed_terminator)
+                busstop_ids.append(blank_id)
         
         def export_hof_v2(self):
             """Export HOF file with proper bus stop handling and termination, version 2"""
@@ -1138,9 +1201,10 @@ class Main(QMainWindow):
             if Main.export_path == "":
                 Main.export_path = Main().fileexplorer()
             Main.hof_class.name = Main.hofname
-            # Ensure blank stops exist
-            self._ensure_blank_stops_exist()
-            self.reload_bslist_id()
+            # Ensure blank stops exist if we have any routes
+            if Main.hof_class.infosystem:
+                self._ensure_blank_stops_exist()
+                self.reload_bslist_id()
             # Process all infosystem entries
             for info in Main.hof_class.infosystem:
                 # Update bus stop names from IDs
@@ -1372,8 +1436,10 @@ class Main(QMainWindow):
             self.ui = EricGuesser_UI()
             self.ui.setupUi(self)
             # self.ui.listWidget.addItems([i.eric for i in Main.hof_class.termini])
+            print([i.eric for i in Main.hof_class.termini[:50]])
             self.ui.EricSEL.addItems([i.eric for i in Main.hof_class.termini])
             self.ui.EricSEL.currentItemChanged.connect(self.show_guesses)
+            self.ui.pushButton.clicked.connect(self.choose_as_eric)
             # self.ui.pushButton.clicked.connect(self.guess)
             # self.ui.pushButton_2.clicked.connect(self.close)
             
@@ -1429,7 +1495,7 @@ class Main(QMainWindow):
             # index = Main.hof_class.termini[index].eric
             Main.hof_class.termini[index].eric = eric_code
             QMessageBox.information(self, "Success", f"Set Eric code to {eric_code} for {Main.hof_class.termini[index].destination}.", QMessageBox.Ok)
-            self.ui.EricSEL.takeItem(itema.row())
+            # self.ui.EricSEL.takeItem(itema.row())
             
         # def guess(self):
         #     code = self.ui.lineEdit.text().strip()
