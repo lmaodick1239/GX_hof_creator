@@ -5,7 +5,7 @@ import sys
 import os
 import hashlib
 import multiprocessing
-
+import re
 
 class ericcode:
     mapping = {'a': 11, 'b': 12, 'c':13,'d':21,'e':22,'f':23,'g':31,'h':32,'i':33,'j':41,'k':42,'l':43,'m':51,'n':52,'o':53,'p':61,'q':62,'r':63,'s':71,'t':72,'u':73,'v':81,'w':82,'x':83,'y':91,'z':92,'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9}
@@ -99,7 +99,7 @@ $RTID
     stopreporter_template = Template('''[addbusstop]
 $name
 $EngDisplay
-$ChiSeconds $EngSeconds
+$Line2String
 $Outbound_sectionfare
 $Inbound_sectionfare
 .........................$comment
@@ -157,7 +157,7 @@ $ls_ddu
 $ls_stopreporter                                 
 [end]
 ''')
-    stopreporter_template_v2 = Template('''$name\t$EngDisplay\t$ChiSeconds $EngSeconds\t$Outbound_sectionfare\t$Inbound_sectionfare\t$comment''')
+    stopreporter_template_v2 = Template('''$name\t$EngDisplay\t$Line2String\t$Outbound_sectionfare\t$Inbound_sectionfare\t$comment''')
     ddu_template_v2 = Template('''$RTNO\t$Outbound_dir        $sectiontimes_Y\t$Inbound_dir        $sectiontimes_Z\t$Outbound_price\t$Inbound_price''')
 
 									
@@ -228,12 +228,13 @@ $ls_stopreporter
             return HOF_Hanover.termini_template.substitute(allexit=self._allexit, eric=self._eric.retstr(), destination=self._destination, busfull=self._busfull, pai_page4 = self._flup4, pai_page3 = self._flup3, pai_page2 = self._flup2,pai_page1 = self._flup1,RTID=self.RTID)
 
     class Busstop_Stopreporter:
-        def __init__(self, name:str = '',EngDisplay:str = '',ChiSeconds:int = 0,EngSeconds:int = 0,Outbound_sectionfare:float = 0.0,Inbound_sectionfare:float = 0.0,comment: str = '',provided_id:str = "",parent=None) -> None:
+        def __init__(self, name:str = '',EngDisplay:str = '',ChiSeconds:int = 0,EngSeconds:int = 0,ManSeconds:int = 0,Outbound_sectionfare:float = 0.0,Inbound_sectionfare:float = 0.0,comment: str = '',provided_id:str = "",parent=None) -> None:
             self._name = name
             self._parent = parent  # Store reference to parent instance
             self._EngDisplay = EngDisplay
             self._ChiSeconds = str(ChiSeconds).rjust(2,'0')
             self._EngSeconds = str(EngSeconds).rjust(2,'0')
+            self._ManSeconds = str(ManSeconds).rjust(2,'0')
                     # Fix: Safely access handrail_flag with fallback
             handrail_flag = self._parent.handrail_flag if self._parent is not None else HOF_Hanover.handrail_flag
             self._Outbound_sectionfare = f"${Outbound_sectionfare:.1f}" if isinstance(Outbound_sectionfare,float) and Outbound_sectionfare != -1.0 else comment if comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else name
@@ -288,6 +289,24 @@ $ls_stopreporter
         @EngSeconds.setter
         def EngSeconds(self, value: int) -> None:
             self._EngSeconds = str(value).rjust(2, '0')
+            
+        @property
+        def ManSeconds(self) -> int:
+            return int(self._ManSeconds)
+        @ManSeconds.setter
+        def ManSeconds(self, value: int) -> None:
+            self._ManSeconds = str(value).rjust(2, '0')
+
+        @property
+        def Line2String(self) -> str:
+            temp = f"{str(self.ChiSeconds).rjust(2, '0') if self.ChiSeconds != 0 else 'NS'} {str(self.EngSeconds).rjust(2, '0') if self.EngSeconds != 0 else 'NS'}{"" + str(sum([self.ChiSeconds, self.EngSeconds, self.ManSeconds])).rjust(2, '0') if self.ManSeconds > 0 else ' NS' if self.ManSeconds == -1 else ''}"
+            if temp == "NS NS NS":
+                return "NoSound"
+            return temp
+            
+        
+        
+
 
         @property
         def Outbound_sectionfare(self) -> float | str:
@@ -305,7 +324,9 @@ $ls_stopreporter
         def Inbound_sectionfare(self, value: float) -> None:
             self._Inbound_sectionfare = f"${value:.1f}" if value != -1.0 else self._name
         def __str__(self) -> str:
-            return HOF_Hanover.stopreporter_template.substitute(name=self._name, EngDisplay=self._EngDisplay, ChiSeconds=self._ChiSeconds, EngSeconds=self._EngSeconds, Outbound_sectionfare=self._Outbound_sectionfare, Inbound_sectionfare=self._Inbound_sectionfare,comment=self._comment)
+
+            
+            return HOF_Hanover.stopreporter_template.substitute(name=self._name, EngDisplay=self._EngDisplay, Line2String=self.Line2String, Outbound_sectionfare=self._Outbound_sectionfare, Inbound_sectionfare=self._Inbound_sectionfare,comment=self._comment)
         
         def add_chi_page(self) -> None:
             if self._pages == 3:
@@ -572,8 +593,8 @@ $stoplist2
     
     def add_ddu(self, RTNO:str = '',Outbound_dir:str = '',Inbound_dir:str = '',Outbound_price:float = -1.0,Inbound_price:float = -1.0,sectiontimes_Y:int = 0,sectiontimes_Z:int = 0) -> None:
         self.ddu.append(self.Busstop_DDU(RTNO,Outbound_dir,Inbound_dir,Outbound_price,Inbound_price,sectiontimes_Y,sectiontimes_Z))
-    def add_stopreporter(self, name:str = '',EngDisplay:str = '',ChiSeconds:int = 0,EngSeconds:int = 0,Outbound_sectionfare:float = 0.0,Inbound_sectionfare:float = 0.0,comment:str = "",provided_id:str = '') -> None:
-        self.stopreporter.append(self.Busstop_Stopreporter(name,EngDisplay,ChiSeconds,EngSeconds,Outbound_sectionfare,Inbound_sectionfare,comment, provided_id = provided_id))
+    def add_stopreporter(self, name:str = '',EngDisplay:str = '',ChiSeconds:int = 0,EngSeconds:int = 0,ManSeconds: int = 0,Outbound_sectionfare:float = 0.0,Inbound_sectionfare:float = 0.0,comment:str = "",provided_id:str = '') -> None:
+        self.stopreporter.append(self.Busstop_Stopreporter(name,EngDisplay,ChiSeconds,EngSeconds,ManSeconds,Outbound_sectionfare,Inbound_sectionfare,comment, provided_id = provided_id))
     def add_terminus(self,allexit:bool = False, eric: str = '', destination: str = '', busfull: str = '', flip: list[str] = [], RTID: str = '') -> None:
         self.termini.append(self.Termini(allexit, eric, destination, busfull, flip, RTID))
     # def add_infosystem(self,eric:str =  '',Destination:str = '',RouteNo:str = '') -> None:
@@ -595,7 +616,7 @@ $stoplist2
         return returnstring
     def show_hof_v2(self) -> str:
         list_termini = [self.termini_template_v2.substitute(allexit="{ALLEX}" if i.allexit == '_allexit' else "", eric=i.eric, destination=i.destination, busfull=i.busfull, pai_page4=i.flip[3] if len(i.flip) > 3 else '', pai_page3=i.flip[2] if len(i.flip) > 2 else '', pai_page2=i.flip[1] if len(i.flip) > 1 else '', pai_page1=i.flip[0] if len(i.flip) > 0 else '', RTID=str(i.RTID)) for i in self.termini]
-        list_stopreporter = [self.stopreporter_template_v2.substitute(name=i.name, EngDisplay=i.EngDisplay, ChiSeconds=i.ChiSeconds, EngSeconds=i.EngSeconds, Outbound_sectionfare=i.Outbound_sectionfare, Inbound_sectionfare=i.Inbound_sectionfare, comment=i.comment) for i in self.stopreporter]
+        list_stopreporter = [self.stopreporter_template_v2.substitute(name=i.name, EngDisplay=i.EngDisplay, Line2String=i.Line2String, Outbound_sectionfare=i.Outbound_sectionfare, Inbound_sectionfare=i.Inbound_sectionfare, comment=i.comment) for i in self.stopreporter]
         list_ddu = [self.ddu_template_v2.substitute(RTNO=i.RTNO, Outbound_dir=i.Outbound_dir, sectiontimes_Y=i.sectiontimes_Y, Inbound_dir=i.Inbound_dir, sectiontimes_Z=i.sectiontimes_Z, Outbound_price=i.Outbound_price, Inbound_price=i.Inbound_price) for i in self.ddu]
         returnstring = '\n'.join([
             self.header_template_v2.substitute(name=self.name, servicetrip=self.servicetrip),
@@ -633,7 +654,7 @@ $stoplist2
 
         c.execute(f'''CREATE TABLE IF NOT EXISTS stopreporter (
                 name TEXT, EngDisplay TEXT, ChiSeconds INTEGER,
-                EngSeconds INTEGER, Outbound_sectionfare REAL,
+                EngSeconds INTEGER,ManSeconds INTEGER, Outbound_sectionfare REAL,
                 Inbound_sectionfare REAL, comment TEXT, busstopID TEXT primary key)''')
         c.execute(f'''CREATE TABLE IF NOT EXISTS termini (
                 allexit BOOL, eric TEXT, destination TEXT, busfull TEXT,
@@ -653,7 +674,7 @@ $stoplist2
         c.executemany('INSERT INTO ddu VALUES (?,?,?,?,?,?,?)', [(i.RTNO, i.Outbound_dir, i.Inbound_dir, i.Outbound_price, i.Inbound_price, i.sectiontimes_Y, i.sectiontimes_Z) for i in self.ddu])
         # c.executemany('INSERT INTO stopreporter VALUES (?,?,?,?,?,?,?,?)', [(i.name, i.EngDisplay, i.ChiSeconds, i.EngSeconds, i.Outbound_sectionfare, i.Inbound_sectionfare, i.comment,i.busstopID) for i in self.stopreporter])
         for i in self.stopreporter:
-            c.execute('INSERT INTO stopreporter VALUES (?,?,?,?,?,?,?,?)', (i.name, i.EngDisplay, i.ChiSeconds, i.EngSeconds, i.Outbound_sectionfare, i.Inbound_sectionfare, i.comment, i.busstopID))
+            c.execute('INSERT INTO stopreporter VALUES (?,?,?,?,?,?,?,?,?)', (i.name, i.EngDisplay, i.ChiSeconds, i.EngSeconds, i.ManSeconds, i.Outbound_sectionfare, i.Inbound_sectionfare, i.comment, i.busstopID))
         c.executemany('INSERT INTO termini VALUES (?,?,?,?,?,?,?,?,?)', [(i.allexit, i.eric, i.destination, i.busfull, i.flip[3] if len(i.flip) > 3 else '', i.flip[2] if len(i.flip) > 2 else '', i.flip[1] if len(i.flip) > 1 else '', i.flip[0] if len(i.flip) > 0 else '', i.RTID) for i in self.termini])
         c.executemany('INSERT INTO infosystem VALUES (?,?,?,?,?,?,?,?)', [(i.single_or_dual_dir, i.route, i.direction1, i.direction2, "\n".join(i.busstop_list1_class.db_export), "\n".join(i.busstop_list2_class.db_export), i.busstop_list1_class.db_export_withid, i.busstop_list2_class.db_export_withid) for i in self.infosystem])
 
@@ -804,7 +825,7 @@ $stoplist2
                     # else:
                     #     eric1 = param1[0].strip()
                     #     out1 = param1[1].strip()
-                    param1 = conversion[-1].split("+")
+                    param1 = conversion[-1].split("+") # type: ignore
                     if len(param1) == 1:
                         eric1 = conversion[1]
                         out1 = param1[0].strip()
@@ -833,12 +854,31 @@ $stoplist2
                         continue
                     if len(stop_name) >= 5 or (len(time_parts := datum[1].split()) <= 2 and time_parts[0].isdigit()):
                         # parse full stopreporter
-                        chi_sec, eng_sec = 0, 0
+                        chi_sec, eng_sec, man_sec = 0, 0, 0
                         time_parts = datum[1].split()
-                        if len(time_parts) >= 1:
-                            chi_sec = int(time_parts[0])
-                        if len(time_parts) >= 2 and time_parts[1].isdigit():
-                            eng_sec = int(time_parts[1])
+                        if time_parts == ["NoSound"]:
+                            chi_sec, eng_sec, man_sec = 0,0,0
+                        else:
+                            if len(time_parts) >= 1 and time_parts[0].isdigit():
+                                chi_sec = int(time_parts[0])
+                            elif len(time_parts) >= 1 and time_parts[0] == "NS":
+                                chi_sec = 0
+                            if len(time_parts) >= 2 and time_parts[1].isdigit():
+                                eng_sec = int(time_parts[1])
+                            elif len(time_parts) >= 2 and time_parts[1] == "NS":
+                                eng_sec = 0
+                            if len(time_parts) == 3:
+                                if time_parts[2].isdigit():
+                                    man_sec = int(time_parts[2]) - chi_sec - eng_sec
+                                elif time_parts[2] == "NS":
+                                    man_sec = 0
+                        # if len(time_parts) >= 1 and time_parts[0].isdigit():
+                        #     chi_sec = int(time_parts[0])
+                        # elif 
+                        # if len(time_parts) >= 2 and time_parts[1].isdigit():
+                        #     eng_sec = int(time_parts[1])
+                        # if len(time_parts) == 3:
+                        #     man_sec = int(time_parts[2]) - chi_sec - eng_sec
                         inbound_price = -1.0
                         if datum[2].startswith('$'):
                             inbound_price = float(datum[2].lstrip('$'))
@@ -852,6 +892,7 @@ $stoplist2
                             datum[4],
                             chi_sec,
                             eng_sec,
+                            man_sec,
                             inbound_price,
                             outbound_price,
                             comment=datum[5] if len(datum) > 5 else ""
@@ -894,8 +935,9 @@ $stoplist2
                         eric1 = lines[i+2]
                         out1 = param1[0].strip()
                     else:
-                        eric1 = param1[1].strip()
+                        eric1 = re.sub(r'^0+(?=\d|\w)', '', param1[0].strip()) # remove leading zeros for ericcode
                         out1 = param1[1].strip()
+                    print(eric1,lines[i + 2],lines[i + 3],lines[i + 4 : i + 8][::-1],out1)
                     hof_entry.add_terminus(
                         False,
                         eric1,
@@ -916,12 +958,11 @@ $stoplist2
                         out1 = param1[1].strip()
                     hof_entry.add_terminus(
                         True,
-                        lines[i + 1],
-                        # lines[i + 2],
                         eric1,
+                        lines[i + 2],
+                        # eric1,
                         lines[i + 3],
                         lines[i + 4 : i + 8][::-1],
-                        # lines[i + 8]
                         out1
                     )
                     i += 9
@@ -932,14 +973,27 @@ $stoplist2
                         i +=1
                         continue
                     if len(stop_name) >= 5 or (len(time_parts := lines[i + 3].split()) <= 2 and time_parts[0].isdigit()):
-                        # parse full stopreporter
-                        chi_sec, eng_sec = 0, 0
+                        print(stop_name, lines[i + 3])
                         time_parts = lines[i + 3].split()
-                        if len(time_parts) >= 1:
-                            print(stop_name)
-                            chi_sec = int(time_parts[0])
-                        if len(time_parts) >= 2 and time_parts[1].isdigit():
-                            eng_sec = int(time_parts[1])
+                        print(time_parts)
+                        # parse full stopreporter
+                        chi_sec, eng_sec, man_sec = 0, 0, 0
+                        if time_parts == ["NoSound"]:
+                            pass
+                        else:
+                            if len(time_parts) >= 1 and time_parts[0].isdigit():
+                                chi_sec = int(time_parts[0])
+                            elif len(time_parts) >= 1 and time_parts[0] == "NS":
+                                chi_sec = 0
+                            if len(time_parts) >= 2 and time_parts[1].isdigit():
+                                eng_sec = int(time_parts[1])
+                            elif len(time_parts) >= 2 and time_parts[1] == "NS":
+                                eng_sec = 0
+                            if len(time_parts) == 3:
+                                if time_parts[2].isdigit():
+                                    man_sec = int(time_parts[2]) - chi_sec - eng_sec
+                                elif time_parts[2] == "NS":
+                                    man_sec = -1
                         inbound_price = -1.0
                         if lines[i + 4].startswith('$'):
                             inbound_price = float(lines[i + 4].lstrip('$'))
@@ -953,6 +1007,7 @@ $stoplist2
                             lines[i + 2],
                             chi_sec,
                             eng_sec,
+                            man_sec,
                             inbound_price,
                             outbound_price
                         )

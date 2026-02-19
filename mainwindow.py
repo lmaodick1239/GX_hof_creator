@@ -29,6 +29,7 @@ import collections
 from HOF import HOF_Hanover as HOF_KMBHan
 from HOF import ericcode
 from collections import deque
+from stop_name_encoder import decode_stop_name, encode_stop_name, update_stop_name_from_ui, get_ui_values_from_name
 global build_with_genLED
 build_with_genLED = False
 def split(a, n):
@@ -393,12 +394,19 @@ class Main(QMainWindow):
             self.ui.pushButton_20.clicked.connect(self.change_bs_FromSel)
             self.ui.toolButton_4.clicked.connect(self.bsl_goup)
             self.ui.toolButton_3.clicked.connect(self.bsl_godown)
+            self.ui.toolButton_5.clicked.connect(self.termini_goup)
+            self.ui.toolButton_6.clicked.connect(self.termini_godown)
+            self.ui.toolButton_7.clicked.connect(self.ddu_goup)
+            self.ui.toolButton_8.clicked.connect(self.ddu_godown)
+            self.ui.toolButton_15.clicked.connect(self.routes_goup)
+            self.ui.toolButton_16.clicked.connect(self.routes_godown)
             self.ui.pushButton_18.clicked.connect(self.check_bsl_validity)
             self.ui.pushButton_24.clicked.connect(self.check_all_bsl_validity)
             # self.ui.pushButton_5
             #----Ctrl+S Shortcut----#
             self.shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
             self.shortcut.activated.connect(self.save)
+            self.ui.Search.textChanged.connect(self.filter_bus_stops)
         def add_stuff(self,stuff:int):
             dct = {
                 1: (Main.hof_class.stopreporter, self.ui.listWidget_3),
@@ -408,10 +416,14 @@ class Main(QMainWindow):
             }
             if stuff == 1:
                 lenth = len(Main.hof_class.stopreporter)
-                Main.hof_class.add_stopreporter(f"NS{lenth}", "New Stop", 0, 0, -1.0, -1.0)
-                Main.opened_windows.append(Main.AddBusStop(None,f"NS{lenth}", "New Stop", 0, 0, -1.0, -1.0,curindex=lenth))
+                Main.hof_class.add_stopreporter(f"NS{lenth}", "New Stop", 0, 0, 0,-1.0, -1.0)
+                Main.opened_windows.append(Main.AddBusStop(None,f"NS{lenth}", "New Stop", 0,0, 0, -1.0, -1.0,curindex=lenth))
                 Main.opened_windows[-1].show()
-                dct[stuff][1].addItem(f"NS{lenth}")
+                new_item = QListWidgetItem(f"NS{lenth}")
+                query = self.ui.Search.toPlainText().strip()
+                if query:
+                    new_item.setHidden(not self._fuzzy_match(query, f"NS{lenth}"))
+                dct[stuff][1].addItem(new_item)
                 self.reload_bslist_id()
             elif stuff == 2:
                 lenth = len(Main.hof_class.ddu)
@@ -445,7 +457,11 @@ class Main(QMainWindow):
                 new_item = copy.deepcopy(original)
                 new_item.busstopID = "".join([chr((ord(i) + random.randint(0,9)))for i in new_item.busstopID])
                 Main.hof_class.stopreporter.insert(index, new_item)
-                self.ui.listWidget_3.insertItem(index, f"{new_item.name}_")
+                lw_item = QListWidgetItem(f"{new_item.name}_")
+                query = self.ui.Search.toPlainText().strip()
+                if query:
+                    lw_item.setHidden(not self._fuzzy_match(query, f"{new_item.name}_"))
+                self.ui.listWidget_3.insertItem(index, lw_item)
                 self.reload_bslist_id()
             elif stuff == 2:
                 ite = self.ui.listWidget_4.currentIndex()
@@ -493,12 +509,37 @@ class Main(QMainWindow):
 
 
         def add_bs_to_dict(self) -> None:
+            query = self.ui.Search.toPlainText().strip() if hasattr(self.ui, 'Search') else ""
             for i, stop in enumerate(Main.hof_class.stopreporter):
                 item = QListWidgetItem(stop.name)
                 item.setData(Qt.ItemDataRole.UserRole, stop.busstopID)  # Store the busstopID
+                if query:
+                    item.setHidden(not self._fuzzy_match(query, stop.name))
                 self.ui.listWidget_3.addItem(item)
                 # Create reverse lookup
                 self.busstop_id_to_index[stop.busstopID] = i
+
+        @staticmethod
+        def _fuzzy_match(query: str, text: str) -> bool:
+            """Return True if query matches text via substring or subsequence."""
+            q = query.lower()
+            t = text.lower()
+            if q in t:
+                return True
+            # subsequence match
+            it = iter(t)
+            return all(c in it for c in q)
+
+        def filter_bus_stops(self):
+            query = self.ui.Search.toPlainText().strip()
+            for i in range(self.ui.listWidget_3.count()):
+                item = self.ui.listWidget_3.item(i)
+                if item is None:
+                    continue
+                if query:
+                    item.setHidden(not self._fuzzy_match(query, item.text()))
+                else:
+                    item.setHidden(False)
 
         def generate_8w_6w_LCD(self):
             if not build_with_genLED:
@@ -581,7 +622,12 @@ class Main(QMainWindow):
             self.ui.listWidget_3.clear()
             self.ui.listWidget_4.clear()
             self.ui.listWidget_5.clear()
-            self.ui.listWidget_3.addItems([i.name for i in Main.hof_class.stopreporter])
+            query = self.ui.Search.toPlainText().strip()
+            for stop in Main.hof_class.stopreporter:
+                item = QListWidgetItem(stop.name)
+                if query:
+                    item.setHidden(not self._fuzzy_match(query, stop.name))
+                self.ui.listWidget_3.addItem(item)
             self.ui.listWidget_4.addItems([i.RTNO for i in Main.hof_class.ddu])
             self.ui.listWidget_5.addItems([i.destination for i in Main.hof_class.termini])
             self.ui.listWidget_3.setCurrentIndex(lw3_curindex)
@@ -656,7 +702,12 @@ class Main(QMainWindow):
             if stuff == 1:
                 Main.hof_class.stopreporter = sorted(Main.hof_class.stopreporter, key=lambda x: x.name)
                 self.ui.listWidget_3.clear()
-                self.ui.listWidget_3.addItems([i.name for i in Main.hof_class.stopreporter])
+                query = self.ui.Search.toPlainText().strip()
+                for stop in Main.hof_class.stopreporter:
+                    item = QListWidgetItem(stop.name)
+                    if query:
+                        item.setHidden(not self._fuzzy_match(query, stop.name))
+                    self.ui.listWidget_3.addItem(item)
             elif stuff == 2:
                 Main.hof_class.ddu = sorted(Main.hof_class.ddu, key=lambda x: x.RTNO)
                 self.ui.listWidget_4.clear()
@@ -748,12 +799,15 @@ class Main(QMainWindow):
         
         def add_bs_from_list(self,bs:list[str]) -> None:
             for i in bs:
-                Main.hof_class.add_stopreporter(f"{i}", f"{i}", 0, 0, -1.0, -1.0)
+                Main.hof_class.add_stopreporter(f"{i}", f"{i}", 0, 0, 0,-1.0, -1.0)
                 # Add to UI
                 stop_index = len(Main.hof_class.stopreporter) - 1
                 stop = Main.hof_class.stopreporter[stop_index]
                 item = QListWidgetItem(stop.name)
                 item.setData(Qt.ItemDataRole.UserRole, stop.busstopID)
+                query = self.ui.Search.toPlainText().strip()
+                if query:
+                    item.setHidden(not self._fuzzy_match(query, stop.name))
                 self.ui.listWidget_3.addItem(item)
                 # Update the busstop_id_to_index dictionary
                 self.busstop_id_to_index[stop.busstopID] = stop_index
@@ -865,6 +919,101 @@ class Main(QMainWindow):
             # Update selection
             self.ui.listWidget.setCurrentRow(index + 1)
 
+        def termini_goup(self):
+            item = self.ui.listWidget_5.currentIndex()
+            index = item.row()
+            if index <= 0:
+                return
+            # Swap in data model
+            Main.hof_class.termini[index - 1], Main.hof_class.termini[index] = \
+                Main.hof_class.termini[index], Main.hof_class.termini[index - 1]
+            # Swap in UI
+            item1 = self.ui.listWidget_5.takeItem(index - 1)
+            item2 = self.ui.listWidget_5.takeItem(index - 1)  # index is now index-1 after takeItem
+            self.ui.listWidget_5.insertItem(index - 1, item2)
+            self.ui.listWidget_5.insertItem(index, item1)
+            # Update selection
+            self.ui.listWidget_5.setCurrentRow(index - 1)
+
+        def termini_godown(self):
+            item = self.ui.listWidget_5.currentIndex()
+            index = item.row()
+            if index >= self.ui.listWidget_5.count() - 1:
+                return
+            # Swap in data model
+            Main.hof_class.termini[index], Main.hof_class.termini[index + 1] = \
+                Main.hof_class.termini[index + 1], Main.hof_class.termini[index]
+            # Swap in UI
+            item1 = self.ui.listWidget_5.takeItem(index)
+            item2 = self.ui.listWidget_5.takeItem(index)  # index is now index after takeItem
+            self.ui.listWidget_5.insertItem(index, item2)
+            self.ui.listWidget_5.insertItem(index + 1, item1)
+            # Update selection
+            self.ui.listWidget_5.setCurrentRow(index + 1)
+
+        def ddu_goup(self):
+            item = self.ui.listWidget_4.currentIndex()
+            index = item.row()
+            if index <= 0:
+                return
+            # Swap in data model
+            Main.hof_class.ddu[index - 1], Main.hof_class.ddu[index] = \
+                Main.hof_class.ddu[index], Main.hof_class.ddu[index - 1]
+            # Swap in UI
+            item1 = self.ui.listWidget_4.takeItem(index - 1)
+            item2 = self.ui.listWidget_4.takeItem(index - 1)  # index is now index-1 after takeItem
+            self.ui.listWidget_4.insertItem(index - 1, item2)
+            self.ui.listWidget_4.insertItem(index, item1)
+            # Update selection
+            self.ui.listWidget_4.setCurrentRow(index - 1)
+
+        def ddu_godown(self):
+            item = self.ui.listWidget_4.currentIndex()
+            index = item.row()
+            if index >= self.ui.listWidget_4.count() - 1:
+                return
+            # Swap in data model
+            Main.hof_class.ddu[index], Main.hof_class.ddu[index + 1] = \
+                Main.hof_class.ddu[index + 1], Main.hof_class.ddu[index]
+            # Swap in UI
+            item1 = self.ui.listWidget_4.takeItem(index)
+            item2 = self.ui.listWidget_4.takeItem(index)  # index is now index after takeItem
+            self.ui.listWidget_4.insertItem(index, item2)
+            self.ui.listWidget_4.insertItem(index + 1, item1)
+            # Update selection
+            self.ui.listWidget_4.setCurrentRow(index + 1)
+
+        def routes_goup(self):
+            item = self.ui.listWidget_2.currentIndex()
+            index = item.row()
+            if index <= 0:
+                return
+            # Swap in data model
+            Main.hof_class.infosystem[index - 1], Main.hof_class.infosystem[index] = \
+                Main.hof_class.infosystem[index], Main.hof_class.infosystem[index - 1]
+            # Swap in UI
+            item1 = self.ui.listWidget_2.takeItem(index - 1)
+            item2 = self.ui.listWidget_2.takeItem(index - 1)  # index is now index-1 after takeItem
+            self.ui.listWidget_2.insertItem(index - 1, item2)
+            self.ui.listWidget_2.insertItem(index, item1)
+            # Update selection
+            self.ui.listWidget_2.setCurrentRow(index - 1)
+
+        def routes_godown(self):
+            item = self.ui.listWidget_2.currentIndex()
+            index = item.row()
+            if index >= self.ui.listWidget_2.count() - 1:
+                return
+            # Swap in data model
+            Main.hof_class.infosystem[index], Main.hof_class.infosystem[index + 1] = \
+                Main.hof_class.infosystem[index + 1], Main.hof_class.infosystem[index]
+            # Swap in UI
+            item1 = self.ui.listWidget_2.takeItem(index)
+            item2 = self.ui.listWidget_2.takeItem(index)  # index is now index after takeItem
+            self.ui.listWidget_2.insertItem(index, item2)
+            self.ui.listWidget_2.insertItem(index + 1, item1)
+            # Update selection
+            self.ui.listWidget_2.setCurrentRow(index + 1)
 
         def change_bs_FromSel(self):
             item = self.ui.listWidget.currentIndex()
@@ -947,6 +1096,7 @@ class Main(QMainWindow):
                                                         stop.EngDisplay,
                                                         stop.ChiSeconds,
                                                         stop.EngSeconds,
+                                                        stop.ManSeconds,
                                                         stop.Outbound_sectionfare if isinstance(stop.Outbound_sectionfare, float) else -1.0,
                                                         stop.Inbound_sectionfare if isinstance(stop.Inbound_sectionfare, float) else -1.0,
                                                         curindex=index))
@@ -962,6 +1112,7 @@ class Main(QMainWindow):
                                 Main.hof_class.stopreporter[index].EngDisplay,
                                 Main.hof_class.stopreporter[index].ChiSeconds,
                                 Main.hof_class.stopreporter[index].EngSeconds,
+                                Main.hof_class.stopreporter[index].ManSeconds,
                                 Main.hof_class.stopreporter[index].Outbound_sectionfare if isinstance(Main.hof_class.stopreporter[index].Outbound_sectionfare,float) else -1.0, #type: ignore
                                 Main.hof_class.stopreporter[index].Inbound_sectionfare if isinstance(Main.hof_class.stopreporter[index].Inbound_sectionfare,float) else -1.0, #type: ignore
                                 curindex=index)) #type: ignore
@@ -1131,9 +1282,9 @@ class Main(QMainWindow):
             """Ensure blank and blank_2pages stops exist in the stopreporter"""
             lsa = [i.name.lower() for i in Main.hof_class.stopreporter]
             if "blank_2pages" not in lsa:
-                Main.hof_class.add_stopreporter("blank_2pages", "", 0, 0, -1.0, -1.0)
+                Main.hof_class.add_stopreporter("blank_2pages", "", 0, 0,0, -1.0, -1.0)
             if "blank" not in lsa:
-                Main.hof_class.add_stopreporter("blank", "", 0, 0, -1.0, -1.0)
+                Main.hof_class.add_stopreporter("blank", "", 0, 0, 0,-1.0, -1.0)
         
         def _update_busstop_names(self, info):
             """Update bus stop names based on their IDs"""
@@ -1252,21 +1403,57 @@ class Main(QMainWindow):
         sig = Signal(int,int)
         sig2 = Signal(int) # For AddBusStop_UI
         orig_autoskip = True
-        def __init__(self, parent=None,name:str = "",engdisp:str="",chisec:int=0,engsec:int=0,osf:float=-1.0,isf:float=-1.0,curindex:int=0):
+        def __init__(self, parent=None,name:str = "",engdisp:str="",chisec:int=0,engsec:int=0,mansec:int=0,osf:float=-1.0,isf:float=-1.0,curindex:int=0):
             super().__init__(parent)
             self.curindex = curindex
             self.ui = AddBusStop_UI()
             self.ui.setupUi(self)
-            self.ui.lineEdit.setText(name)
+            
+            # Parse the stop name to extract properties
+            ui_values = get_ui_values_from_name(name, engdisp)
+            
+            # Set the base name (without prefix/suffix) in the lineEdit
+            self.ui.lineEdit.setText(ui_values['base_name'])
             self.ui.lineEdit_2.setText(engdisp)
             self.ui.spinBox.setValue(chisec)
             self.ui.spinBox_2.setValue(engsec)
+            self.ui.spinBox_3.setValue(mansec)
             self.ui.doubleSpinBox.setValue(osf)
             self.ui.doubleSpinBox_2.setValue(isf)
-            self.ui.checkBox.setChecked(True if name[0] == "_" else False)
+            
+            # Set UI fields based on parsed properties
+            self.ui.checkBox.setChecked(ui_values['autoskip'])
+            self.ui.checkBox_8w6w.setChecked(ui_values['w8w6_different'])
+            self.ui.spinBox_4.setValue(ui_values['chi_pages'])
+            
             self.ui.pushButton.clicked.connect(self.get_routes_bs_in)
-            orig_autoskip = (True if name[0] == "_" else False)
+            orig_autoskip = ui_values['autoskip']
             self.hofview = Main.opened_windows[0]
+            
+            # Connect UI changes to update stop name
+            self.ui.checkBox.stateChanged.connect(self.update_stop_name_preview)
+            self.ui.checkBox_8w6w.stateChanged.connect(self.update_stop_name_preview)
+            self.ui.spinBox_4.valueChanged.connect(self.update_stop_name_preview)
+            self.ui.lineEdit_2.textChanged.connect(self.update_stop_name_preview)
+        
+        def update_stop_name_preview(self):
+            """Update the displayed stop name based on current UI field values."""
+            base_name = self.ui.lineEdit.text().strip()
+            if not base_name:
+                return
+            
+            # Get current UI values
+            autoskip = self.ui.checkBox.isChecked()
+            w8w6_different = self.ui.checkBox_8w6w.isChecked()
+            chi_pages = self.ui.spinBox_4.value()
+            eng_display = self.ui.lineEdit_2.text()
+            eng_at_count = eng_display.count('@')
+            
+            # Generate the encoded name
+            encoded_name = encode_stop_name(base_name, autoskip, w8w6_different, chi_pages, eng_at_count)
+            
+            # Update the window title to show the encoded name
+            self.setWindowTitle(f"Edit Bus Stop - Encoded: {encoded_name}")
         def get_bs(self):
             Main.raise_unimplemented()
         def get_routes_bs_in(self):
@@ -1284,38 +1471,30 @@ class Main(QMainWindow):
                 QMessageBox.information(self, "Routes", "This bus stop is not in any routes.", QMessageBox.Ok)
                     
         def closeEvent(self,event):
-
-
+            # Get values from UI
+            base_name = self.ui.lineEdit.text().strip()
+            eng_display = self.ui.lineEdit_2.text().strip()
+            autoskip = self.ui.checkBox.isChecked()
+            w8w6_different = self.ui.checkBox_8w6w.isChecked()
+            chi_pages = self.ui.spinBox_4.value()
+            eng_at_count = eng_display.count('@')
             
-            #             self._name = name
-            # self._EngDisplay = EngDisplay
-            # self._ChiSeconds = str(ChiSeconds).rjust(2,'0')
-            # self._EngSeconds = str(EngSeconds).rjust(2,'0')
-            # self._Outbound_sectionfare = f"${Outbound_sectionfare:.1f}" if isinstance(Outbound_sectionfare,float) and Outbound_sectionfare != -1.0 else name
-            # self._Inbound_sectionfare = f"${Inbound_sectionfare:.1f}" if isinstance(Inbound_sectionfare,float) and Inbound_sectionfare != -1.0 else name
-
-            # lst = [self.ui.plainTextEdit.document().isModified(), self.ui.plainTextEdit_2.document().isModified(), self.ui.spinBox.value() != 0, self.ui.spinBox_2.value() != 0, self.ui.doubleSpinBox.value() != 0.0, self.ui.doubleSpinBox_2.value() != 0.0]
-
-            # if 
-            Main.hof_class.stopreporter[self.curindex].name = self.ui.lineEdit.text().strip()
-            Main.hof_class.stopreporter[self.curindex].EngDisplay = self.ui.lineEdit_2.text().strip()
+            # Encode the stop name with prefix/suffix
+            encoded_name = encode_stop_name(base_name, autoskip, w8w6_different, chi_pages, eng_at_count)
+            
+            # Save to the HOF class
+            Main.hof_class.stopreporter[self.curindex].name = encoded_name
+            Main.hof_class.stopreporter[self.curindex].EngDisplay = eng_display
             Main.hof_class.stopreporter[self.curindex].ChiSeconds = self.ui.spinBox.value()
             Main.hof_class.stopreporter[self.curindex].EngSeconds = self.ui.spinBox_2.value()
+            Main.hof_class.stopreporter[self.curindex].ManSeconds = self.ui.spinBox_3.value()
             Main.hof_class.stopreporter[self.curindex].Outbound_sectionfare = self.ui.doubleSpinBox.value()
             Main.hof_class.stopreporter[self.curindex].Inbound_sectionfare = self.ui.doubleSpinBox_2.value()
-            # Main.hof_class.stopreporter[self.curindex].comment = f"{self.ui.lineEdit_3.text()}|{self.ui.lineEdit_4.text()}"
-
-                
-            # if self.ui.checkBox.isChecked() and not self.orig_autoskip:
-            #     Main.hof_class.add_stopreporter(f"_{self.ui.lineEdit.text()}", self.ui.lineEdit_2.text(), self.ui.spinBox.value(), self.ui.spinBox_2.value(), self.ui.doubleSpinBox.value(), self.ui.doubleSpinBox_2.value())
-            #     Main.hof_class.stopreporter[-1].comment = f"{self.ui.lineEdit_3.text()}|{self.ui.lineEdit_4.text()}"
-            self.sig.connect(self.hofview.update_listviews)
             
+            self.sig.connect(self.hofview.update_listviews)
             self.sig.emit(self.curindex,1)
             self.sig2.connect(self.hofview.reload_bslist_id)
             self.sig2.emit(self.curindex)
-            # Main.HOFView().ui.listWidget_3.item(self.curindex).setText(self.ui.plainTextEdit.toPlainText())
-            # item.setText(Main.hof_class.stopreporter[self.curindex].name)
             event.accept() # let the window close
 
     class AddDDU(QMainWindow):

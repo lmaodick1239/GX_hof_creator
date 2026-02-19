@@ -18,15 +18,15 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QGridLayout,
     QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
-    QMainWindow, QMenu, QMenuBar, QPushButton,
-    QSizePolicy, QStatusBar, QToolButton, QVBoxLayout,
-    QWidget)
+    QMainWindow, QMenu, QMenuBar, QPlainTextEdit,
+    QPushButton, QSizePolicy, QSpacerItem, QStatusBar,
+    QToolButton, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(729, 810)
+        MainWindow.resize(729, 813)
         MainWindow.setMinimumSize(QSize(625, 810))
         self.actionOpen_Project_Folder = QAction(MainWindow)
         self.actionOpen_Project_Folder.setObjectName(u"actionOpen_Project_Folder")
@@ -63,43 +63,6 @@ class Ui_MainWindow(object):
         self.gridLayout = QGridLayout()
         self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.pushButton_14 = QPushButton(self.centralwidget)
-        self.pushButton_14.setObjectName(u"pushButton_14")
-        self.pushButton_14.setMinimumSize(QSize(60, 23))
-        self.pushButton_14.setMaximumSize(QSize(60, 23))
-
-        self.gridLayout.addWidget(self.pushButton_14, 0, 10, 1, 1)
-
-        self.pushButton_11 = QPushButton(self.centralwidget)
-        self.pushButton_11.setObjectName(u"pushButton_11")
-        self.pushButton_11.setMinimumSize(QSize(60, 23))
-        self.pushButton_11.setMaximumSize(QSize(60, 23))
-
-        self.gridLayout.addWidget(self.pushButton_11, 2, 2, 1, 1)
-
-        self.label_5 = QLabel(self.centralwidget)
-        self.label_5.setObjectName(u"label_5")
-        self.label_5.setMinimumSize(QSize(125, 69))
-        font = QFont()
-        font.setPointSize(16)
-        self.label_5.setFont(font)
-        self.label_5.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.gridLayout.addWidget(self.label_5, 0, 4, 3, 1)
-
-        self.listWidget_5 = QListWidget(self.centralwidget)
-        self.listWidget_5.setObjectName(u"listWidget_5")
-        self.listWidget_5.setMinimumSize(QSize(186, 210))
-
-        self.gridLayout.addWidget(self.listWidget_5, 3, 8, 1, 3)
-
-        self.pushButton_5 = QPushButton(self.centralwidget)
-        self.pushButton_5.setObjectName(u"pushButton_5")
-        self.pushButton_5.setMinimumSize(QSize(60, 23))
-        self.pushButton_5.setMaximumSize(QSize(60, 23))
-
-        self.gridLayout.addWidget(self.pushButton_5, 1, 2, 1, 1)
-
         self.line_2 = QFrame(self.centralwidget)
         self.line_2.setObjectName(u"line_2")
         self.line_2.setMinimumSize(QSize(14, 279))
@@ -107,38 +70,45 @@ class Ui_MainWindow(object):
         self.line_2.setFrameShape(QFrame.Shape.VLine)
         self.line_2.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout.addWidget(self.line_2, 0, 7, 4, 1)
+        self.gridLayout.addWidget(self.line_2, 0, 7, 7, 1)
 
-        self.line_3 = QFrame(self.centralwidget)
-        self.line_3.setObjectName(u"line_3")
-        self.line_3.setMinimumSize(QSize(581, 0))
-        self.line_3.setFrameShape(QFrame.Shape.HLine)
-        self.line_3.setFrameShadow(QFrame.Shadow.Sunken)
+        self.label = QLabel(self.centralwidget)
+        self.label.setObjectName(u"label")
+        self.label.setMinimumSize(QSize(126, 69))
+        font = QFont()
+        font.setPointSize(16)
+        self.label.setFont(font)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.gridLayout.addWidget(self.line_3, 4, 0, 1, 11)
+        self.gridLayout.addWidget(self.label, 0, 8, 3, 1)
 
-        self.pushButton_15 = QPushButton(self.centralwidget)
-        self.pushButton_15.setObjectName(u"pushButton_15")
-        self.pushButton_15.setMinimumSize(QSize(60, 23))
-        self.pushButton_15.setMaximumSize(QSize(60, 23))
+        self.pushButton_13 = QPushButton(self.centralwidget)
+        self.pushButton_13.setObjectName(u"pushButton_13")
+        self.pushButton_13.setMinimumSize(QSize(60, 23))
+        self.pushButton_13.setMaximumSize(QSize(60, 23))
 
-        self.gridLayout.addWidget(self.pushButton_15, 1, 10, 1, 1)
+        self.gridLayout.addWidget(self.pushButton_13, 2, 6, 1, 1)
 
-        self.pushButton_22 = QPushButton(self.centralwidget)
-        self.pushButton_22.setObjectName(u"pushButton_22")
-        self.pushButton_22.setMinimumSize(QSize(16, 72))
-        self.pushButton_22.setMaximumSize(QSize(16, 72))
+        self.Search = QPlainTextEdit(self.centralwidget)
+        self.Search.setObjectName(u"Search")
+        self.Search.setMaximumSize(QSize(16777215, 22))
+        self.Search.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        self.gridLayout.addWidget(self.pushButton_22, 0, 5, 3, 1)
+        self.gridLayout.addWidget(self.Search, 4, 0, 1, 3)
 
-        self.line = QFrame(self.centralwidget)
-        self.line.setObjectName(u"line")
-        self.line.setMinimumSize(QSize(14, 279))
-        self.line.setMaximumSize(QSize(14, 279))
-        self.line.setFrameShape(QFrame.Shape.VLine)
-        self.line.setFrameShadow(QFrame.Shadow.Sunken)
+        self.pushButton_8 = QPushButton(self.centralwidget)
+        self.pushButton_8.setObjectName(u"pushButton_8")
+        self.pushButton_8.setMinimumSize(QSize(60, 23))
+        self.pushButton_8.setMaximumSize(QSize(60, 23))
 
-        self.gridLayout.addWidget(self.line, 0, 3, 4, 1)
+        self.gridLayout.addWidget(self.pushButton_8, 1, 6, 1, 1)
+
+        self.pushButton_14 = QPushButton(self.centralwidget)
+        self.pushButton_14.setObjectName(u"pushButton_14")
+        self.pushButton_14.setMinimumSize(QSize(60, 23))
+        self.pushButton_14.setMaximumSize(QSize(60, 23))
+
+        self.gridLayout.addWidget(self.pushButton_14, 0, 10, 1, 1)
 
         self.label_2 = QLabel(self.centralwidget)
         self.label_2.setObjectName(u"label_2")
@@ -148,12 +118,26 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.label_2, 0, 0, 3, 1)
 
-        self.pushButton_13 = QPushButton(self.centralwidget)
-        self.pushButton_13.setObjectName(u"pushButton_13")
-        self.pushButton_13.setMinimumSize(QSize(60, 23))
-        self.pushButton_13.setMaximumSize(QSize(60, 23))
+        self.pushButton_16 = QPushButton(self.centralwidget)
+        self.pushButton_16.setObjectName(u"pushButton_16")
+        self.pushButton_16.setMinimumSize(QSize(60, 23))
+        self.pushButton_16.setMaximumSize(QSize(60, 23))
 
-        self.gridLayout.addWidget(self.pushButton_13, 2, 6, 1, 1)
+        self.gridLayout.addWidget(self.pushButton_16, 2, 10, 1, 1)
+
+        self.pushButton_11 = QPushButton(self.centralwidget)
+        self.pushButton_11.setObjectName(u"pushButton_11")
+        self.pushButton_11.setMinimumSize(QSize(60, 23))
+        self.pushButton_11.setMaximumSize(QSize(60, 23))
+
+        self.gridLayout.addWidget(self.pushButton_11, 2, 2, 1, 1)
+
+        self.pushButton_15 = QPushButton(self.centralwidget)
+        self.pushButton_15.setObjectName(u"pushButton_15")
+        self.pushButton_15.setMinimumSize(QSize(60, 23))
+        self.pushButton_15.setMaximumSize(QSize(60, 23))
+
+        self.gridLayout.addWidget(self.pushButton_15, 1, 10, 1, 1)
 
         self.pushButton_7 = QPushButton(self.centralwidget)
         self.pushButton_7.setObjectName(u"pushButton_7")
@@ -162,6 +146,27 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.pushButton_7, 0, 6, 1, 1)
 
+        self.label_5 = QLabel(self.centralwidget)
+        self.label_5.setObjectName(u"label_5")
+        self.label_5.setMinimumSize(QSize(125, 69))
+        self.label_5.setFont(font)
+        self.label_5.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.gridLayout.addWidget(self.label_5, 0, 4, 3, 1)
+
+        self.pushButton_22 = QPushButton(self.centralwidget)
+        self.pushButton_22.setObjectName(u"pushButton_22")
+        self.pushButton_22.setMinimumSize(QSize(16, 72))
+        self.pushButton_22.setMaximumSize(QSize(16, 72))
+
+        self.gridLayout.addWidget(self.pushButton_22, 0, 5, 3, 1)
+
+        self.listWidget_3 = QListWidget(self.centralwidget)
+        self.listWidget_3.setObjectName(u"listWidget_3")
+        self.listWidget_3.setMinimumSize(QSize(186, 210))
+
+        self.gridLayout.addWidget(self.listWidget_3, 6, 0, 1, 3)
+
         self.pushButton_3 = QPushButton(self.centralwidget)
         self.pushButton_3.setObjectName(u"pushButton_3")
         self.pushButton_3.setMinimumSize(QSize(60, 23))
@@ -169,32 +174,48 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.pushButton_3, 0, 2, 1, 1)
 
-        self.listWidget_3 = QListWidget(self.centralwidget)
-        self.listWidget_3.setObjectName(u"listWidget_3")
-        self.listWidget_3.setMinimumSize(QSize(186, 210))
+        self.pushButton_5 = QPushButton(self.centralwidget)
+        self.pushButton_5.setObjectName(u"pushButton_5")
+        self.pushButton_5.setMinimumSize(QSize(60, 23))
+        self.pushButton_5.setMaximumSize(QSize(60, 23))
 
-        self.gridLayout.addWidget(self.listWidget_3, 3, 0, 1, 3)
+        self.gridLayout.addWidget(self.pushButton_5, 1, 2, 1, 1)
 
-        self.label = QLabel(self.centralwidget)
-        self.label.setObjectName(u"label")
-        self.label.setMinimumSize(QSize(126, 69))
-        self.label.setFont(font)
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.listWidget_5 = QListWidget(self.centralwidget)
+        self.listWidget_5.setObjectName(u"listWidget_5")
+        self.listWidget_5.setMinimumSize(QSize(186, 210))
 
-        self.gridLayout.addWidget(self.label, 0, 8, 3, 1)
+        self.gridLayout.addWidget(self.listWidget_5, 6, 8, 1, 3)
+
+        self.pushButton_23 = QPushButton(self.centralwidget)
+        self.pushButton_23.setObjectName(u"pushButton_23")
+        self.pushButton_23.setMinimumSize(QSize(16, 72))
+        self.pushButton_23.setMaximumSize(QSize(16, 72))
+
+        self.gridLayout.addWidget(self.pushButton_23, 0, 1, 3, 1)
+
+        self.line = QFrame(self.centralwidget)
+        self.line.setObjectName(u"line")
+        self.line.setMinimumSize(QSize(14, 279))
+        self.line.setMaximumSize(QSize(14, 279))
+        self.line.setFrameShape(QFrame.Shape.VLine)
+        self.line.setFrameShadow(QFrame.Shadow.Sunken)
+
+        self.gridLayout.addWidget(self.line, 0, 3, 7, 1)
 
         self.listWidget_4 = QListWidget(self.centralwidget)
         self.listWidget_4.setObjectName(u"listWidget_4")
         self.listWidget_4.setMinimumSize(QSize(185, 210))
 
-        self.gridLayout.addWidget(self.listWidget_4, 3, 4, 1, 3)
+        self.gridLayout.addWidget(self.listWidget_4, 6, 4, 1, 3)
 
-        self.pushButton_8 = QPushButton(self.centralwidget)
-        self.pushButton_8.setObjectName(u"pushButton_8")
-        self.pushButton_8.setMinimumSize(QSize(60, 23))
-        self.pushButton_8.setMaximumSize(QSize(60, 23))
+        self.line_3 = QFrame(self.centralwidget)
+        self.line_3.setObjectName(u"line_3")
+        self.line_3.setMinimumSize(QSize(581, 0))
+        self.line_3.setFrameShape(QFrame.Shape.HLine)
+        self.line_3.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.gridLayout.addWidget(self.pushButton_8, 1, 6, 1, 1)
+        self.gridLayout.addWidget(self.line_3, 7, 0, 1, 11)
 
         self.pushButton_21 = QPushButton(self.centralwidget)
         self.pushButton_21.setObjectName(u"pushButton_21")
@@ -203,19 +224,53 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.pushButton_21, 0, 9, 3, 1)
 
-        self.pushButton_16 = QPushButton(self.centralwidget)
-        self.pushButton_16.setObjectName(u"pushButton_16")
-        self.pushButton_16.setMinimumSize(QSize(60, 23))
-        self.pushButton_16.setMaximumSize(QSize(60, 23))
+        self.verticalSpacer = QSpacerItem(20, 4, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
 
-        self.gridLayout.addWidget(self.pushButton_16, 2, 10, 1, 1)
+        self.gridLayout.addItem(self.verticalSpacer, 3, 0, 1, 1)
 
-        self.pushButton_23 = QPushButton(self.centralwidget)
-        self.pushButton_23.setObjectName(u"pushButton_23")
-        self.pushButton_23.setMinimumSize(QSize(16, 72))
-        self.pushButton_23.setMaximumSize(QSize(16, 72))
+        self.verticalSpacer_2 = QSpacerItem(20, 4, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
 
-        self.gridLayout.addWidget(self.pushButton_23, 0, 1, 3, 1)
+        self.gridLayout.addItem(self.verticalSpacer_2, 5, 0, 1, 1)
+
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.toolButton_5 = QToolButton(self.centralwidget)
+        self.toolButton_5.setObjectName(u"toolButton_5")
+        self.toolButton_5.setMaximumSize(QSize(58, 40))
+        icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.GoUp))
+        self.toolButton_5.setIcon(icon)
+
+        self.horizontalLayout_3.addWidget(self.toolButton_5)
+
+        self.toolButton_6 = QToolButton(self.centralwidget)
+        self.toolButton_6.setObjectName(u"toolButton_6")
+        self.toolButton_6.setMaximumSize(QSize(58, 40))
+        icon1 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.GoDown))
+        self.toolButton_6.setIcon(icon1)
+
+        self.horizontalLayout_3.addWidget(self.toolButton_6)
+
+
+        self.gridLayout.addLayout(self.horizontalLayout_3, 4, 10, 1, 1)
+
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.toolButton_7 = QToolButton(self.centralwidget)
+        self.toolButton_7.setObjectName(u"toolButton_7")
+        self.toolButton_7.setMaximumSize(QSize(58, 40))
+        self.toolButton_7.setIcon(icon)
+
+        self.horizontalLayout_4.addWidget(self.toolButton_7)
+
+        self.toolButton_8 = QToolButton(self.centralwidget)
+        self.toolButton_8.setObjectName(u"toolButton_8")
+        self.toolButton_8.setMaximumSize(QSize(58, 40))
+        self.toolButton_8.setIcon(icon1)
+
+        self.horizontalLayout_4.addWidget(self.toolButton_8)
+
+
+        self.gridLayout.addLayout(self.horizontalLayout_4, 4, 6, 1, 1)
 
 
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 6)
@@ -328,7 +383,6 @@ class Ui_MainWindow(object):
         self.toolButton_4 = QToolButton(self.centralwidget)
         self.toolButton_4.setObjectName(u"toolButton_4")
         self.toolButton_4.setMaximumSize(QSize(58, 40))
-        icon = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.GoUp))
         self.toolButton_4.setIcon(icon)
 
         self.horizontalLayout_2.addWidget(self.toolButton_4)
@@ -336,7 +390,6 @@ class Ui_MainWindow(object):
         self.toolButton_3 = QToolButton(self.centralwidget)
         self.toolButton_3.setObjectName(u"toolButton_3")
         self.toolButton_3.setMaximumSize(QSize(58, 40))
-        icon1 = QIcon(QIcon.fromTheme(QIcon.ThemeIcon.GoDown))
         self.toolButton_3.setIcon(icon1)
 
         self.horizontalLayout_2.addWidget(self.toolButton_3)
@@ -380,6 +433,25 @@ class Ui_MainWindow(object):
 
 
         self.gridLayout_2.addLayout(self.verticalLayout_2, 3, 5, 1, 1)
+
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.toolButton_15 = QToolButton(self.centralwidget)
+        self.toolButton_15.setObjectName(u"toolButton_15")
+        self.toolButton_15.setMaximumSize(QSize(58, 40))
+        self.toolButton_15.setIcon(icon)
+
+        self.horizontalLayout_8.addWidget(self.toolButton_15)
+
+        self.toolButton_16 = QToolButton(self.centralwidget)
+        self.toolButton_16.setObjectName(u"toolButton_16")
+        self.toolButton_16.setMaximumSize(QSize(58, 40))
+        self.toolButton_16.setIcon(icon1)
+
+        self.horizontalLayout_8.addWidget(self.toolButton_16)
+
+
+        self.gridLayout_2.addLayout(self.horizontalLayout_8, 2, 0, 1, 1)
 
 
         self.gridLayout_3.addLayout(self.gridLayout_2, 0, 0, 1, 1)
@@ -445,30 +517,56 @@ class Ui_MainWindow(object):
         self.actionExport_HOF_v2.setWhatsThis(QCoreApplication.translate("MainWindow", u"A smaller HOF File. Hopefully.", None))
 #endif // QT_CONFIG(whatsthis)
         self.actionReset_Busstop_List_IDs.setText(QCoreApplication.translate("MainWindow", u"Reset Busstop List IDs", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"Termini", None))
+        self.pushButton_13.setText(QCoreApplication.translate("MainWindow", u"Duplicate", None))
+#if QT_CONFIG(tooltip)
+        self.Search.setToolTip(QCoreApplication.translate("MainWindow", u"Search...", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        self.Search.setStatusTip(QCoreApplication.translate("MainWindow", u"Search...", None))
+#endif // QT_CONFIG(statustip)
+#if QT_CONFIG(whatsthis)
+        self.Search.setWhatsThis(QCoreApplication.translate("MainWindow", u"Search...", None))
+#endif // QT_CONFIG(whatsthis)
+#if QT_CONFIG(accessibility)
+        self.Search.setAccessibleName(QCoreApplication.translate("MainWindow", u"Search...", None))
+#endif // QT_CONFIG(accessibility)
+        self.Search.setPlainText("")
+        self.pushButton_8.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.pushButton_14.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+        self.label_2.setText(QCoreApplication.translate("MainWindow", u"Bus Stops", None))
+        self.pushButton_16.setText(QCoreApplication.translate("MainWindow", u"Duplicate", None))
         self.pushButton_11.setText(QCoreApplication.translate("MainWindow", u"Duplicate", None))
-        self.label_5.setText(QCoreApplication.translate("MainWindow", u"DDU", None))
-        self.pushButton_5.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.pushButton_15.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
+        self.pushButton_7.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+        self.label_5.setText(QCoreApplication.translate("MainWindow", u"DDU", None))
         self.pushButton_22.setText(QCoreApplication.translate("MainWindow", u"S\n"
 "o\n"
 "r\n"
 "t", None))
-        self.label_2.setText(QCoreApplication.translate("MainWindow", u"Bus Stops", None))
-        self.pushButton_13.setText(QCoreApplication.translate("MainWindow", u"Duplicate", None))
-        self.pushButton_7.setText(QCoreApplication.translate("MainWindow", u"Add", None))
+#if QT_CONFIG(tooltip)
+        self.listWidget_3.setToolTip(QCoreApplication.translate("MainWindow", u"Search...", None))
+#endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(statustip)
+        self.listWidget_3.setStatusTip(QCoreApplication.translate("MainWindow", u"Search...", None))
+#endif // QT_CONFIG(statustip)
+#if QT_CONFIG(whatsthis)
+        self.listWidget_3.setWhatsThis(QCoreApplication.translate("MainWindow", u"Search...", None))
+#endif // QT_CONFIG(whatsthis)
         self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"Add", None))
-        self.label.setText(QCoreApplication.translate("MainWindow", u"Termini", None))
-        self.pushButton_8.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
-        self.pushButton_21.setText(QCoreApplication.translate("MainWindow", u"S\n"
-"o\n"
-"r\n"
-"t", None))
-        self.pushButton_16.setText(QCoreApplication.translate("MainWindow", u"Duplicate", None))
+        self.pushButton_5.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.pushButton_23.setText(QCoreApplication.translate("MainWindow", u"S\n"
 "o\n"
 "r\n"
 "t", None))
+        self.pushButton_21.setText(QCoreApplication.translate("MainWindow", u"S\n"
+"o\n"
+"r\n"
+"t", None))
+        self.toolButton_5.setText(QCoreApplication.translate("MainWindow", u"...", None))
+        self.toolButton_6.setText(QCoreApplication.translate("MainWindow", u"...", None))
+        self.toolButton_7.setText(QCoreApplication.translate("MainWindow", u"...", None))
+        self.toolButton_8.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Routes", None))
         self.pushButton_9.setText(QCoreApplication.translate("MainWindow", u"Add", None))
         self.pushButton_12.setText(QCoreApplication.translate("MainWindow", u"Duplicate", None))
@@ -500,6 +598,8 @@ class Ui_MainWindow(object):
         self.pushButton_20.setText(QCoreApplication.translate("MainWindow", u"Change\n"
 "Current to\n"
 "Selected BS", None))
+        self.toolButton_15.setText(QCoreApplication.translate("MainWindow", u"...", None))
+        self.toolButton_16.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.menuMap.setTitle(QCoreApplication.translate("MainWindow", u"Map", None))
         self.menuLED.setTitle(QCoreApplication.translate("MainWindow", u"LED", None))
