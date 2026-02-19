@@ -164,7 +164,6 @@ $ls_stopreporter
     def __init__(self,name:str='Default',servicetrip:str='Not In Service') -> None:
         self.name = name
         self.servicetrip = servicetrip
-        self.handrail_flag = True
         
 
 
@@ -235,10 +234,8 @@ $ls_stopreporter
             self._ChiSeconds = str(ChiSeconds).rjust(2,'0')
             self._EngSeconds = str(EngSeconds).rjust(2,'0')
             self._ManSeconds = str(ManSeconds).rjust(2,'0')
-                    # Fix: Safely access handrail_flag with fallback
-            handrail_flag = self._parent.handrail_flag if self._parent is not None else HOF_Hanover.handrail_flag
-            self._Outbound_sectionfare = f"${Outbound_sectionfare:.1f}" if isinstance(Outbound_sectionfare,float) and Outbound_sectionfare != -1.0 else comment if comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else name if "dingdong" not in name.lower() else "SectionFare"
-            self._Inbound_sectionfare = f"${Inbound_sectionfare:.1f}" if isinstance(Inbound_sectionfare,float) and Inbound_sectionfare != -1.0 else comment if comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else name if "dingdong" not in name.lower() else "SectionFare"
+            self._raw_Outbound_sectionfare = Outbound_sectionfare
+            self._raw_Inbound_sectionfare = Inbound_sectionfare
             self._Autoskip = False
             self._pages = 1
             self._engscroll = self._EngDisplay.count('@') // 2
@@ -246,6 +243,16 @@ $ls_stopreporter
             # Generate a unique busstopID based on name and EngDisplay
             unique_str = f"{name}-{EngDisplay}"
             self.busstopID = hashlib.md5(unique_str.encode('utf-8')).hexdigest()[:8] if provided_id == "" else provided_id
+
+        @property
+        def _Outbound_sectionfare(self) -> str:
+            handrail_flag = self._parent.handrail_flag if self._parent is not None else HOF_Hanover.handrail_flag
+            return f"${self._raw_Outbound_sectionfare:.1f}" if isinstance(self._raw_Outbound_sectionfare,float) and self._raw_Outbound_sectionfare != -1.0 else self._comment if self._comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else self._name if "dingdong" not in self._name.lower() else "SectionFare"
+
+        @property
+        def _Inbound_sectionfare(self) -> str:
+            handrail_flag = self._parent.handrail_flag if self._parent is not None else HOF_Hanover.handrail_flag
+            return f"${self._raw_Inbound_sectionfare:.1f}" if isinstance(self._raw_Inbound_sectionfare,float) and self._raw_Inbound_sectionfare != -1.0 else self._comment if self._comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else self._name if "dingdong" not in self._name.lower() else "SectionFare"
 
         @property
         def name(self) -> str:
@@ -314,7 +321,7 @@ $ls_stopreporter
 
         @Outbound_sectionfare.setter
         def Outbound_sectionfare(self, value: float) -> None:
-            self._Outbound_sectionfare = f"${value:.1f}" if value != -1.0 else self._name
+            self._raw_Outbound_sectionfare = value
 
         @property
         def Inbound_sectionfare(self) -> float | str:
@@ -322,7 +329,7 @@ $ls_stopreporter
 
         @Inbound_sectionfare.setter
         def Inbound_sectionfare(self, value: float) -> None:
-            self._Inbound_sectionfare = f"${value:.1f}" if value != -1.0 else self._name
+            self._raw_Inbound_sectionfare = value
         def __str__(self) -> str:
 
             
@@ -594,7 +601,7 @@ $stoplist2
     def add_ddu(self, RTNO:str = '',Outbound_dir:str = '',Inbound_dir:str = '',Outbound_price:float = -1.0,Inbound_price:float = -1.0,sectiontimes_Y:int = 0,sectiontimes_Z:int = 0) -> None:
         self.ddu.append(self.Busstop_DDU(RTNO,Outbound_dir,Inbound_dir,Outbound_price,Inbound_price,sectiontimes_Y,sectiontimes_Z))
     def add_stopreporter(self, name:str = '',EngDisplay:str = '',ChiSeconds:int = 0,EngSeconds:int = 0,ManSeconds: int = 0,Outbound_sectionfare:float = 0.0,Inbound_sectionfare:float = 0.0,comment:str = "",provided_id:str = '') -> None:
-        self.stopreporter.append(self.Busstop_Stopreporter(name,EngDisplay,ChiSeconds,EngSeconds,ManSeconds,Outbound_sectionfare,Inbound_sectionfare,comment, provided_id = provided_id))
+        self.stopreporter.append(self.Busstop_Stopreporter(name,EngDisplay,ChiSeconds,EngSeconds,ManSeconds,Outbound_sectionfare,Inbound_sectionfare,comment, provided_id = provided_id, parent=self))
     def add_terminus(self,allexit:bool = False, eric: str = '', destination: str = '', busfull: str = '', flip: list[str] = [], RTID: str = '') -> None:
         self.termini.append(self.Termini(allexit, eric, destination, busfull, flip, RTID))
     # def add_infosystem(self,eric:str =  '',Destination:str = '',RouteNo:str = '') -> None:
@@ -611,10 +618,16 @@ $stoplist2
             # print("Adding infosystem without id")
             self.infosystem.append(self.Infosystem(single_or_dual_dir, route, dir1, dir2, bustoplist1, bustoplist2))
             self.fill_busttoplist_with_id()
+    def _sync_stopreporter_parent(self) -> None:
+        for stop in self.stopreporter:
+            if stop._parent is not self:
+                stop._parent = self
     def showfullhof(self) -> str:
+        self._sync_stopreporter_parent()
         returnstring = '\n'.join([''.join(self.header_template.substitute(name = self.name,servicetrip = self.servicetrip)),'\n'.join((str(i) for i in self.termini)),'\n'.join(str(i) for i in self.ddu),'\n'.join((str(i) for i in self.stopreporter)),'\n'.join((str(i) for i in self.infosystem))])
         return returnstring
     def show_hof_v2(self) -> str:
+        self._sync_stopreporter_parent()
         list_termini = [self.termini_template_v2.substitute(allexit="{ALLEX}" if i.allexit == '_allexit' else "", eric=i.eric, destination=i.destination, busfull=i.busfull, pai_page4=i.flip[3] if len(i.flip) > 3 else '', pai_page3=i.flip[2] if len(i.flip) > 2 else '', pai_page2=i.flip[1] if len(i.flip) > 1 else '', pai_page1=i.flip[0] if len(i.flip) > 0 else '', RTID=str(i.RTID)) for i in self.termini]
         list_stopreporter = [self.stopreporter_template_v2.substitute(name=i.name, EngDisplay=i.EngDisplay, Line2String=i.Line2String, Outbound_sectionfare=i.Outbound_sectionfare, Inbound_sectionfare=i.Inbound_sectionfare, comment=i.comment) for i in self.stopreporter]
         list_ddu = [self.ddu_template_v2.substitute(RTNO=i.RTNO, Outbound_dir=i.Outbound_dir, sectiontimes_Y=i.sectiontimes_Y, Inbound_dir=i.Inbound_dir, sectiontimes_Z=i.sectiontimes_Z, Outbound_price=i.Outbound_price, Inbound_price=i.Inbound_price) for i in self.ddu]
@@ -755,7 +768,7 @@ $stoplist2
             # print(ls[index])
         self.ddu = [self.Busstop_DDU(*i) for i in ls]
         c.execute(f'''SELECT * FROM stopreporter''')
-        self.stopreporter = [self.Busstop_Stopreporter(*i) for i in c.fetchall()]
+        self.stopreporter = [self.Busstop_Stopreporter(*i, parent=self) for i in c.fetchall()]
         # for i in c.fetchall():
 
         c.execute(f'''SELECT * FROM termini''')

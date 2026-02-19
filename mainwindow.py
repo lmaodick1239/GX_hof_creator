@@ -252,6 +252,11 @@ class Main(QMainWindow):
             self.ui.lineEdit_2.setText(Main.hofname)
             self.ui.lineEdit_2.textChanged.connect(lambda: setattr(Main, "hofname", self.ui.lineEdit_2.text()))
             self.ui.toolButton.clicked.connect(self.fileexplorer)
+            # Read actual handrail flag from HOF class and sync with checkbox
+            self.ui.checkBox.setChecked(not Main.hof_class.handrail_flag)
+            self.ui.checkBox.stateChanged.connect(self.update_handrail_flag)
+        def update_handrail_flag(self):
+            Main.hof_class.handrail_flag = not self.ui.checkBox.isChecked()
         def closewindow(self):
             self.close()
         def fileexplorer(self):
