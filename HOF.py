@@ -237,8 +237,8 @@ $ls_stopreporter
             self._ManSeconds = str(ManSeconds).rjust(2,'0')
                     # Fix: Safely access handrail_flag with fallback
             handrail_flag = self._parent.handrail_flag if self._parent is not None else HOF_Hanover.handrail_flag
-            self._Outbound_sectionfare = f"${Outbound_sectionfare:.1f}" if isinstance(Outbound_sectionfare,float) and Outbound_sectionfare != -1.0 else comment if comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else name
-            self._Inbound_sectionfare = f"${Inbound_sectionfare:.1f}" if isinstance(Inbound_sectionfare,float) and Inbound_sectionfare != -1.0 else comment if comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else name
+            self._Outbound_sectionfare = f"${Outbound_sectionfare:.1f}" if isinstance(Outbound_sectionfare,float) and Outbound_sectionfare != -1.0 else comment if comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else name if "dingdong" not in name.lower() else "SectionFare"
+            self._Inbound_sectionfare = f"${Inbound_sectionfare:.1f}" if isinstance(Inbound_sectionfare,float) and Inbound_sectionfare != -1.0 else comment if comment != '' else "No_PHTH" if not handrail_flag and "WELCOME ONBOARD" in self._EngDisplay else name if "dingdong" not in name.lower() else "SectionFare"
             self._Autoskip = False
             self._pages = 1
             self._engscroll = self._EngDisplay.count('@') // 2
@@ -299,7 +299,7 @@ $ls_stopreporter
 
         @property
         def Line2String(self) -> str:
-            temp = f"{str(self.ChiSeconds).rjust(2, '0') if self.ChiSeconds != 0 else 'NS'} {str(self.EngSeconds).rjust(2, '0') if self.EngSeconds != 0 else 'NS'}{"" + str(sum([self.ChiSeconds, self.EngSeconds, self.ManSeconds])).rjust(2, '0') if self.ManSeconds > 0 else ' NS' if self.ManSeconds == -1 else ''}"
+            temp = f"{str(self.ChiSeconds).rjust(2, '0') if self.ChiSeconds != 0 else 'NS'} {str(self.EngSeconds).rjust(2, '0') if self.EngSeconds != 0 else 'NS'}{" " + str(sum([self.ChiSeconds, self.EngSeconds, self.ManSeconds])).rjust(2, '0') if self.ManSeconds > 0 else ' NS' if self.ManSeconds == -1 else ''}"
             if temp == "NS NS NS":
                 return "NoSound"
             return temp
@@ -310,7 +310,7 @@ $ls_stopreporter
 
         @property
         def Outbound_sectionfare(self) -> float | str:
-            return float(self._Outbound_sectionfare.strip('$')) if self._Outbound_sectionfare.lstrip("$").replace(".","").isnumeric() else self._name
+            return float(self._Outbound_sectionfare.strip('$')) if self._Outbound_sectionfare.lstrip("$").replace(".","").isnumeric() else self._name if "dingdong" not in self._name.lower() else "SectionFare"
 
         @Outbound_sectionfare.setter
         def Outbound_sectionfare(self, value: float) -> None:
@@ -318,7 +318,7 @@ $ls_stopreporter
 
         @property
         def Inbound_sectionfare(self) -> float | str:
-            return float(self._Inbound_sectionfare.strip('$')) if self._Inbound_sectionfare.lstrip("$").replace(".","").isnumeric() else self._name
+            return float(self._Inbound_sectionfare.strip('$')) if self._Inbound_sectionfare.lstrip("$").replace(".","").isnumeric() else self._name if "dingdong" not in self._name.lower() else "SectionFare"
 
         @Inbound_sectionfare.setter
         def Inbound_sectionfare(self, value: float) -> None:
