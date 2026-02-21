@@ -570,16 +570,17 @@ class Main(QMainWindow):
             for win in Main.opened_windows[:]:
                 if win is not self:
                     win.close()
-            Main.opened_windows.clear()
-            # Reset the HOF_KMBHan instance
-            Main.hof_class = HOF_KMBHan()
-            # Explicitly clear termini and other lists
-            Main.hof_class.termini.clear()
-            Main.hof_class.stopreporter.clear()
-            Main.hof_class.ddu.clear()
-            Main.hof_class.infosystem.clear()
+
             file = QFileDialog.getOpenFileName(self, 'Open HOF', 'C:\\', 'HOF Files (*.hof)')
-            if file[0]:
+            if file[0]:            
+                Main.opened_windows.clear()
+                # Reset the HOF_KMBHan instance
+                Main.hof_class = HOF_KMBHan()
+                # Explicitly clear termini and other lists
+                Main.hof_class.termini.clear()
+                Main.hof_class.stopreporter.clear()
+                Main.hof_class.ddu.clear()
+                Main.hof_class.infosystem.clear()
                 a = Main.hof_class.load_from_hof(file[0])
                 Main.test_error_codes(a)
                 self.close()
