@@ -12,8 +12,8 @@ class ericcode:
     oristring = ''
     def retstr(self) -> str:
         returnstring = ''.join(self.eric)
-        if (len(returnstring) - len(self.oristring) == 1 and returnstring[-1] != 0) or (len(returnstring) < 6 and returnstring[-1] != 0):
-            returnstring = returnstring + '0'
+        # if (len(returnstring) - len(self.oristring) == 1 and returnstring[-1] != 0) or (len(returnstring) < 6 and returnstring[-1] != 0):
+        #     returnstring = returnstring + '0'
         return returnstring
     def __init__(self, code: str) -> None:
         self.oristring = code
@@ -26,8 +26,8 @@ class ericcode:
         #     returnstring = returnstring + '0'
         #     if len(eric) - len(name) == 1 or len(eric) < 6:
         # eric = eric + '0'
-        if ((len(returnstring) - len(self.oristring) == 1 or len(returnstring) < 6) and returnstring[-1] != "0") :
-            returnstring = returnstring + '0'
+        # if ((len(returnstring) - len(self.oristring) == 1 or len(returnstring) < 6) and returnstring[-1] != "0") :
+        #     returnstring = returnstring + '0'
         return returnstring
     def __int__(self) -> int:
         return int(str(self.retstr()))
@@ -811,13 +811,27 @@ $stoplist2
         database_file.close()
         print(f"Loaded from {filename}")
 
-    def load_from_hof(self, filename: str) -> None:
+    def load_from_hof(self, filename: str) -> None | int:
         bsl_v2 = False
         tls_v2 = False
         try:
             hof_entry = HOF_Hanover()
-            with open(filename, 'r',encoding="utf-8") as f:
-                lines = [line.strip() for line in f]
+            try:
+                with open(filename, 'r',encoding="utf-8") as f:
+                    lines = [line.strip() for line in f]
+            except UnicodeDecodeError:
+                try:
+                    with open(filename, 'r') as f:
+                        lines = [line.strip() for line in f]
+                except UnicodeDecodeError:
+                    return 989
+            except FileNotFoundError:
+                print(f"File {filename} not found.")
+                return
+            except Exception as e:
+                print(f"An error occurred while reading the file: {e}")
+                return
+                    
             i = 0
             while i < len(lines):
                 line = lines[i]
@@ -945,7 +959,7 @@ $stoplist2
                     # param = lines[i].replace("[addterminus]", "").strip()
                     param1 = lines[i + 8].split("+")
                     if len(param1) == 1:
-                        eric1 = lines[i+2]
+                        eric1 = lines[i+1].strip()
                         out1 = param1[0].strip()
                     else:
                         eric1 = re.sub(r'^0+(?=\d|\w)', '', param1[0].strip()) # remove leading zeros for ericcode
@@ -964,7 +978,7 @@ $stoplist2
                 elif line == "[addterminus_allexit]":
                     param1 = lines[i + 8].split("+")
                     if len(param1) == 1:
-                        eric1 = lines[i+2]
+                        eric1 = lines[i+1].strip()
                         out1 = param1[0].strip()
                     else:
                         eric1 = param1[0].strip()
@@ -1009,12 +1023,15 @@ $stoplist2
                                     man_sec = -1
                         inbound_price = -1.0
                         if lines[i + 4].startswith('$'):
-                            inbound_price = float(lines[i + 4].lstrip('$'))
+                            inbound_price = float(lines[i + 4].replace(",",".").lstrip('$'))
                             # print(inbound_price)
                         outbound_price = -1.0
                         if lines[i + 5].startswith('$'):
-                            outbound_price = float(lines[i + 5].lstrip('$'))
+                            outbound_price = float(lines[i + 5].replace(",",".").lstrip('$'))
                             # print("op",outbound_price)
+                        if len(lines[i + 2]) > 0 and ((lines[i + 2][-1] in ['T','Y','Z','R'] or len(lines[i + 2]) <= 3 ) and lines[i + 2][:-1].strip().isdigit() and (time_parts != ["NoSound"] and (not time_parts[0].isnumeric() and len(time_parts) <= 3))):
+                            # Telargo! Not supported
+                            return 990
                         hof_entry.add_stopreporter(
                             stop_name,
                             lines[i + 2],

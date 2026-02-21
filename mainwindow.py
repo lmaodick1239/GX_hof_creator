@@ -119,6 +119,17 @@ class Main(QMainWindow):
     #     # self.current_data_queue_index %= 50
     #     # self.next_queue_index +=1
     #     # self.next_queue_index %= 50
+    
+    @staticmethod
+    def test_error_codes(a):
+        case = {
+            989: "Failed to load HOF file. Your HOF is not in UTF-8 and has ASCII non-complient charcters. Convert to UTF-8 and try again.",
+            990: "Telargo entries are not supported. Please remove or convert them and try again."
+        }
+        if a in case:
+            QMessageBox.warning(None, "Error", case[a], QMessageBox.Ok) #type: ignore
+    
+    
     @staticmethod
     def exhaust_guesses(code):
         '''Exhausts all guesses of the eric code, returns a list of all guesses with reasonableness scores'''
@@ -295,7 +306,9 @@ class Main(QMainWindow):
             Main.hof_class = HOF_KMBHan()
             file = QFileDialog.getOpenFileName(self, 'Open HOF', 'C:\\', 'HOF Files (*.hof)')
             if file[0]:
-                Main.hof_class.load_from_hof(file[0])
+                a = Main.hof_class.load_from_hof(file[0])
+                Main.test_error_codes(a)
+                # considering that the load_from_hof function can fail due to encoding issues, we should check its return value before proceeding
                 Main.opened_windows.append(Main.HOFView())
                 Main.opened_windows[-1].show()
                 Main.hofname = file[0].split("/")[-1].removesuffix(".hof")
@@ -567,7 +580,8 @@ class Main(QMainWindow):
             Main.hof_class.infosystem.clear()
             file = QFileDialog.getOpenFileName(self, 'Open HOF', 'C:\\', 'HOF Files (*.hof)')
             if file[0]:
-                Main.hof_class.load_from_hof(file[0])
+                a = Main.hof_class.load_from_hof(file[0])
+                Main.test_error_codes(a)
                 self.close()
                 Main.opened_windows.append(Main.HOFView())
                 Main.opened_windows[-1].show()
