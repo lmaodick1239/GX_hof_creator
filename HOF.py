@@ -6,6 +6,7 @@ import os
 import hashlib
 import multiprocessing
 import re
+from datetime import datetime
 
 class ericcode:
     mapping = {'a': 11, 'b': 12, 'c':13,'d':21,'e':22,'f':23,'g':31,'h':32,'i':33,'j':41,'k':42,'l':43,'m':51,'n':52,'o':53,'p':61,'q':62,'r':63,'s':71,'t':72,'u':73,'v':81,'w':82,'x':83,'y':91,'z':92,'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9}
@@ -802,6 +803,7 @@ $stoplist2
         ls = c.fetchall()
         for index, i in enumerate(ls):
             ls[index] = list(i)
+            print(ls[index])
             ls[index][4] = ls[index][4].strip().split('\n') if isinstance(ls[index][4], str) else []
             ls[index][5] = ls[index][5].strip().split('\n') if isinstance(ls[index][5], str) else []
             ls[index][6] = ls[index][6].strip().split('\n') if isinstance(ls[index][6], str) else []
@@ -814,6 +816,16 @@ $stoplist2
     def load_from_hof(self, filename: str) -> None | int | tuple[None, list[str]]:
         bsl_v2 = False
         tls_v2 = False
+        log_filename = f"{os.path.splitext(os.path.basename(filename))[0]}_log.txt"
+
+        def _log(message: str) -> None:
+            try:
+                with open(log_filename, "a", encoding="utf-8") as log_file:
+                    log_file.write(f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {message}\n")
+            except OSError:
+                pass
+
+        _log(f"Loading {filename}")
         try:
             hof_entry = HOF_Hanover()
             parse_warnings: list[str] = []
@@ -822,6 +834,7 @@ $stoplist2
                 parse_warnings.append(
                     f"Line {line_index + 1}: {field_name} failed to read from '{raw_value}', using fallback {fallback_value}."
                 )
+                _log(parse_warnings[-1])
 
             def _safe_non_negative_int(raw_value: str, field_name: str, line_index: int, allow_ns: bool = False) -> int:
                 if allow_ns and raw_value == "NS":
@@ -878,12 +891,15 @@ $stoplist2
                     with open(filename, 'r') as f:
                         lines = [line.strip() for line in f]
                 except UnicodeDecodeError:
+                    _log("Unable to decode the file using the default encodings.")
                     return 989
             except FileNotFoundError:
                 print(f"File {filename} not found.")
+                _log(f"File {filename} not found.")
                 return
             except Exception as e:
                 print(f"An error occurred while reading the file: {e}")
+                _log(f"An error occurred while reading the file: {e}")
                 return
                     
             i = 0
@@ -1210,6 +1226,7 @@ $stoplist2
             print(exc_type, fname, exc_tb.tb_lineno) 
             print(e)
             print(f"Error loading from {filename}")
+            _log(f"Error loading from {filename}: {exc_type.__name__}: {e}")
             return
         # print(hof_entry.showfullhof())
         self.name = hof_entry.name
@@ -1226,6 +1243,7 @@ $stoplist2
             seta.add(i.busstopID)
         if len(seta) != len(self.stopreporter):
             print("Duplicate busstop IDs found, removing duplicates...")
+            _log("Duplicate busstop IDs found, removing duplicates...")
             seen_ids = set()
             unique_stopreporter = []
             for i in self.stopreporter:
@@ -1239,6 +1257,11 @@ $stoplist2
         # lsa = [i.busstopID for i in self.stopreporter]
         
         print(f"Loaded from {filename}")
+        _log(
+            f"Loaded from {filename}: {len(self.termini)} termini, "
+            f"{len(self.stopreporter)} stopreporter entries, "
+            f"{len(self.ddu)} DDU entries, {len(self.infosystem)} infosystem entries."
+        )
         if parse_warnings:
             return (None, parse_warnings)
 
