@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'AddTermini.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.0
+## Created by: Qt User Interface Compiler version 6.12.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,10 +16,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractScrollArea, QApplication, QFrame, QGridLayout,
-    QHeaderView, QLabel, QLineEdit, QMainWindow,
-    QMenuBar, QSizePolicy, QSpacerItem, QStatusBar,
-    QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout,
-    QWidget)
+    QHBoxLayout, QHeaderView, QLabel, QLineEdit,
+    QMainWindow, QMenuBar, QSizePolicy, QSpacerItem,
+    QSpinBox, QStatusBar, QTableWidget, QTableWidgetItem,
+    QToolButton, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -104,10 +104,28 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addLayout(self.verticalLayout_2, 0, 0, 6, 1)
 
+        self.horizontalLayout_route = QHBoxLayout()
+        self.horizontalLayout_route.setObjectName(u"horizontalLayout_route")
         self.lineEdit = QLineEdit(self.centralwidget)
         self.lineEdit.setObjectName(u"lineEdit")
 
-        self.gridLayout.addWidget(self.lineEdit, 1, 1, 1, 1)
+        self.horizontalLayout_route.addWidget(self.lineEdit)
+
+        self.label_dir = QLabel(self.centralwidget)
+        self.label_dir.setObjectName(u"label_dir")
+
+        self.horizontalLayout_route.addWidget(self.label_dir)
+
+        self.spinBox_dir = QSpinBox(self.centralwidget)
+        self.spinBox_dir.setObjectName(u"spinBox_dir")
+        self.spinBox_dir.setMinimum(0)
+        self.spinBox_dir.setMaximum(8)
+        self.spinBox_dir.setValue(0)
+
+        self.horizontalLayout_route.addWidget(self.spinBox_dir)
+
+
+        self.gridLayout.addLayout(self.horizontalLayout_route, 1, 1, 1, 1)
 
         self.lineEdit_2 = QLineEdit(self.centralwidget)
         self.lineEdit_2.setObjectName(u"lineEdit_2")
@@ -142,7 +160,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Add Bus Stop", None))
         self.toolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
         ___qtablewidgetitem = self.tableWidget.horizontalHeaderItem(0)
-        ___qtablewidgetitem.setText(QCoreApplication.translate("MainWindow", u"New Column", None));
+        ___qtablewidgetitem.setText(QCoreApplication.translate("MainWindow", u"New Column", None))
         self.label_5.setText(QCoreApplication.translate("MainWindow", u"Eric String (e.g: 289AY)", None))
         self.label_10.setText(QCoreApplication.translate("MainWindow", u"Destination", None))
         self.label_8.setText(QCoreApplication.translate("MainWindow", u"Busfull Display Filename", None))
@@ -151,5 +169,6 @@ class Ui_MainWindow(object):
 "of 4,3,2,1\n"
 "Each corresponding to your\n"
 "display page", None))
+        self.label_dir.setText(QCoreApplication.translate("MainWindow", u"Dir (0-8):", None))
     # retranslateUi
 

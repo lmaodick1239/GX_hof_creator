@@ -9,43 +9,155 @@ import re
 from datetime import datetime
 
 class ericcode:
-    mapping = {'a': 11, 'b': 12, 'c':13,'d':21,'e':22,'f':23,'g':31,'h':32,'i':33,'j':41,'k':42,'l':43,'m':51,'n':52,'o':53,'p':61,'q':62,'r':63,'s':71,'t':72,'u':73,'v':81,'w':82,'x':83,'y':91,'z':92,'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9}
-    oristring = ''
+    mapping = {
+        'a': 11, 'b': 12, 'c': 13, 'd': 21, 'e': 22, 'f': 23,
+        'g': 31, 'h': 32, 'i': 33, 'j': 41, 'k': 42, 'l': 43,
+        'm': 51, 'n': 52, 'o': 53, 'p': 61, 'q': 62, 'r': 63,
+        's': 71, 't': 72, 'u': 73, 'v': 81, 'w': 82, 'x': 83,
+        'y': 91, 'z': 92,
+        '0': 0, '1': 1, '2': 2, '3': 3, '4': 4,
+        '5': 5, '6': 6, '7': 7, '8': 8, '9': 9
+    }
+
+    def __init__(self, code: str | int = '') -> None:
+        if isinstance(code, ericcode):
+            self.oristring = code.oristring
+            self.eric = list(code.eric)
+            return
+        self.oristring = str(code) if code is not None else ''
+        self.eric = [
+            str(self.mapping[c])
+            for c in self.oristring.lower()
+            if c in self.mapping
+        ]
+
     def retstr(self) -> str:
-        returnstring = ''.join(self.eric)
-        if (len(returnstring) - len(self.oristring) == 1 and returnstring[-1] != 0) or (len(returnstring) < 6 and returnstring[-1] != 0):
-            returnstring = returnstring + '0'
-        return returnstring
-    def __init__(self, code: str) -> None:
-        self.oristring = code
-        self.eric = list(map(str,[self.mapping[c] for c in (code.lower() if isinstance(code, str) else str(code))]))
+        raw = ''.join(self.eric)
+        if not raw:
+            return ''
+        # Per hanover.osc:
+        # (L.L.hanover_haveenglish) 0 > (L.L.hanover_value) 100000 < &&
+        # {if} (L.L.hanover_value) 10 * (S.L.hanover_value) {endif}
+        has_english = any(c.isalpha() for c in self.oristring)
+        if has_english and len(raw) < 6:
+            return raw + '0'
+        return raw
+
     def __len__(self) -> int:
-        return len(''.join(self.eric))
+        return len(self.retstr())
+
     def __str__(self) -> str:
-        returnstring = ''.join(self.eric)
-        # if len(returnstring) < 6:
-        #     returnstring = returnstring + '0'
-        #     if len(eric) - len(name) == 1 or len(eric) < 6:
-        # eric = eric + '0'
-        # if ((len(returnstring) - len(self.oristring) == 1 or len(returnstring) < 6) and returnstring[-1] != "0") :
-        #     returnstring = returnstring + '0'
-        return returnstring
+        return self.retstr()
+
     def __int__(self) -> int:
-        return int(str(self.retstr()))
-    
+        s = self.retstr()
+        return int(s) if s else 0
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, ericcode):
+            return self.oristring == other.oristring or self.retstr() == other.retstr()
+        if isinstance(other, str):
+            return self.oristring == other or self.retstr() == other
+        if isinstance(other, int):
+            return int(self) == other
+        return False
+
     @property
     def orig(self) -> str:
         return self.oristring
-    
 
-            
+
 class gorbacode:
-    mapping = {'a': 11, 'b': 12, 'c':13,'d':21,'e':22,'f':23,'g':31,'h':32,'i':33,'j':41,'k':42,'l':43,'m':51,'n':52,'o':53,'p':61,'q':62,'r':63,'s':71,'t':72,'u':73,'v':81,'w':82,'x':83,'y':91,'z':92,'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9}
-    def __init__(self) -> None:
-        raise NotImplementedError("Gorba code is not implemented yet")
-    '''
-    I dont know what code gorba uses, so I will leave this empty for now
-    '''
+    mapping = {
+        'a': 11, 'b': 12, 'c': 13, 'd': 21, 'e': 22, 'f': 23,
+        'g': 31, 'h': 32, 'i': 33, 'j': 41, 'k': 42, 'l': 43,
+        'm': 51, 'n': 52, 'o': 53, 'p': 61, 'q': 62, 'r': 63,
+        's': 71, 't': 72, 'u': 73, 'v': 81, 'w': 82, 'x': 83,
+        'y': 91, 'z': 92,
+        '0': 0, '1': 1, '2': 2, '3': 3, '4': 4,
+        '5': 5, '6': 6, '7': 7, '8': 8, '9': 9
+    }
+    direction_letter_map = {
+        'y': 1, 'z': 2, 'x': 3, 'w': 4, 'v': 5, 'u': 6, 't': 7, 's': 8, 'r': 8, 'q': 8
+    }
+
+    def __init__(self, code: str | int = '', direction: int | None = None) -> None:
+        if isinstance(code, gorbacode):
+            self.oristring = code.oristring
+            self.route = code.route
+            self.direction = code.direction if direction is None else int(direction)
+            return
+
+        self.oristring = str(code) if code is not None else ''
+        raw_code = self.oristring.strip()
+
+        delim_match = re.match(r'^(.+?)[-/_](\d+)$', raw_code)
+        if delim_match:
+            self.route = delim_match.group(1)
+            parsed_dir = int(delim_match.group(2))
+        elif raw_code and raw_code[-1].lower() in self.direction_letter_map and len(raw_code) > 1:
+            self.route = raw_code[:-1]
+            parsed_dir = self.direction_letter_map[raw_code[-1].lower()]
+        else:
+            self.route = raw_code
+            parsed_dir = 0
+
+        self.direction = int(direction) if direction is not None else parsed_dir
+        if direction is not None and self.direction != 0 and '-' not in self.oristring and not (self.oristring and self.oristring[-1].lower() in self.direction_letter_map):
+            self.oristring = f"{self.route}-{self.direction}"
+
+    def retstr(self) -> str:
+        if not self.route:
+            return ''
+
+        if self.route.isdigit() and int(self.route) == 0:
+            return self.oristring if self.oristring else '0'
+
+        mapped_chars = [
+            str(self.mapping[c])
+            for c in self.route.lower()
+            if c in self.mapping
+        ]
+        raw_mapped = ''.join(mapped_chars)
+        if not raw_mapped:
+            return ''
+
+        has_english = any(c.isalpha() for c in self.route)
+
+        # Per gorba.osc:
+        # hanover_enter_english_frame: value * 10 if haveenglish and value < 100000
+        # hanover_enter_frame: always value * 10
+        # gorba_data_direction: added to base (0..8)
+        if has_english:
+            base_str = raw_mapped + ('00' if len(raw_mapped) < 6 else '0')
+        else:
+            base_str = raw_mapped + '0'
+
+        dir_digit = max(0, min(8, self.direction))
+        return base_str[:-1] + str(dir_digit)
+
+    def __len__(self) -> int:
+        return len(self.retstr())
+
+    def __str__(self) -> str:
+        return self.retstr()
+
+    def __int__(self) -> int:
+        s = self.retstr()
+        return int(s) if s else 0
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, gorbacode):
+            return self.oristring == other.oristring or self.retstr() == other.retstr()
+        if isinstance(other, str):
+            return self.oristring == other or self.retstr() == other
+        if isinstance(other, int):
+            return int(self) == other
+        return False
+
+    @property
+    def orig(self) -> str:
+        return self.oristring
 def split(a, n):
     k, m = divmod(len(a), n)
     return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
@@ -165,6 +277,10 @@ $ls_stopreporter
     def __init__(self,name:str='Default',servicetrip:str='Not In Service') -> None:
         self.name = name
         self.servicetrip = servicetrip
+        self.ddu: list['HOF_Hanover.Busstop_DDU'] = []
+        self.stopreporter: list['HOF_Hanover.Busstop_Stopreporter'] = []
+        self.termini: list['HOF_Hanover.Termini'] = []
+        self.infosystem: list['HOF_Hanover.Infosystem'] = []
         
 
 
@@ -222,6 +338,14 @@ $ls_stopreporter
         @allexit.setter
         def allexit(self, value: bool) -> None:
             self._allexit = '_allexit' if value else ''
+
+        @property
+        def direction(self) -> int:
+            return 0
+
+        @direction.setter
+        def direction(self, value: int) -> None:
+            pass
         
         
         def __str__(self) -> str:
@@ -629,7 +753,17 @@ $stoplist2
         return returnstring
     def show_hof_v2(self) -> str:
         self._sync_stopreporter_parent()
-        list_termini = [self.termini_template_v2.substitute(allexit="{ALLEX}" if i.allexit == '_allexit' else "", eric=i._eric.retstr(), destination=i.destination, busfull=i.busfull, pai_page4=i.flip[3] if len(i.flip) > 3 else '', pai_page3=i.flip[2] if len(i.flip) > 2 else '', pai_page2=i.flip[1] if len(i.flip) > 1 else '', pai_page1=i.flip[0] if len(i.flip) > 0 else '', RTID=str(i.RTID)) for i in self.termini]
+        list_termini = [self.termini_template_v2.substitute(
+            allexit="{ALLEX}" if i.allexit == '_allexit' else "",
+            eric=getattr(i, '_gorba', i._eric).retstr(),
+            destination=i.destination,
+            busfull=i.busfull,
+            pai_page4=i.flip[3] if len(i.flip) > 3 else '',
+            pai_page3=i.flip[2] if len(i.flip) > 2 else '',
+            pai_page2=i.flip[1] if len(i.flip) > 1 else '',
+            pai_page1=i.flip[0] if len(i.flip) > 0 else '',
+            RTID=str(i.RTID)
+        ) for i in self.termini]
         list_stopreporter = [self.stopreporter_template_v2.substitute(name=i.name, EngDisplay=i.EngDisplay, Line2String=i.Line2String, Outbound_sectionfare=i.Outbound_sectionfare, Inbound_sectionfare=i.Inbound_sectionfare, comment=i.comment) for i in self.stopreporter]
         list_ddu = [self.ddu_template_v2.substitute(RTNO=i.RTNO, Outbound_dir=i.Outbound_dir, sectiontimes_Y=i.sectiontimes_Y, Inbound_dir=i.Inbound_dir, sectiontimes_Z=i.sectiontimes_Z, Outbound_price=i.Outbound_price, Inbound_price=i.Inbound_price) for i in self.ddu]
         returnstring = '\n'.join([
@@ -638,6 +772,7 @@ $stoplist2
             self.stopreporter_full_template_v2.substitute(ls_ddu='\n'.join(list_ddu), ls_stopreporter='\n'.join(list_stopreporter)),
             '\n'.join(str(i) for i in self.infosystem)
         ])
+        return returnstring
         
         # returnstring = '\n'.join([
         #     self.header_template_v2.substitute(name=self.name, servicetrip=self.servicetrip),
@@ -691,6 +826,17 @@ $stoplist2
             c.execute('INSERT INTO stopreporter VALUES (?,?,?,?,?,?,?,?,?)', (i.name, i.EngDisplay, i.ChiSeconds, i.EngSeconds, i.ManSeconds, i.Outbound_sectionfare, i.Inbound_sectionfare, i.comment, i.busstopID))
         c.executemany('INSERT INTO termini VALUES (?,?,?,?,?,?,?,?,?)', [(i.allexit, i.eric, i.destination, i.busfull, i.flip[3] if len(i.flip) > 3 else '', i.flip[2] if len(i.flip) > 2 else '', i.flip[1] if len(i.flip) > 1 else '', i.flip[0] if len(i.flip) > 0 else '', i.RTID) for i in self.termini])
         c.executemany('INSERT INTO infosystem VALUES (?,?,?,?,?,?,?,?)', [(i.single_or_dual_dir, i.route, i.direction1, i.direction2, "\n".join(i.busstop_list1_class.db_export), "\n".join(i.busstop_list2_class.db_export), i.busstop_list1_class.db_export_withid, i.busstop_list2_class.db_export_withid) for i in self.infosystem])
+
+        c.execute('DROP TABLE IF EXISTS project_settings')
+        c.execute('''CREATE TABLE IF NOT EXISTS project_settings (
+                key TEXT PRIMARY KEY, value TEXT)''')
+        hof_type = 'Gorba' if isinstance(self, HOF_Gorba) else 'Hanover'
+        c.executemany('INSERT INTO project_settings VALUES (?, ?)', [
+            ('hof_type', hof_type),
+            ('name', self.name),
+            ('servicetrip', self.servicetrip),
+            ('handrail_flag', '1' if getattr(self, 'handrail_flag', True) else '0'),
+        ])
 
         database_file.commit()
         database_file.close()
@@ -754,11 +900,43 @@ $stoplist2
         #                 i.busstop_list2_class.bustops_withid[index] = k.busstopID
 
 
-    def load_from_db(self, filename: str) -> None:
+    @staticmethod
+    def detect_hof_type_from_db(filename: str) -> str:
+        try:
+            conn = sqlite3.connect(filename)
+            c = conn.cursor()
+            c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='project_settings'")
+            if c.fetchone():
+                c.execute("SELECT value FROM project_settings WHERE key='hof_type'")
+                row = c.fetchone()
+                if row and row[0]:
+                    conn.close()
+                    return str(row[0])
+            conn.close()
+        except Exception:
+            pass
+        return "Hanover"
 
+    def load_from_db(self, filename: str) -> None:
+        self.ddu.clear()
+        self.stopreporter.clear()
+        self.termini.clear()
+        self.infosystem.clear()
 
         database_file = sqlite3.connect(filename)
         c = database_file.cursor()
+
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='project_settings'")
+        if c.fetchone():
+            c.execute("SELECT key, value FROM project_settings")
+            settings = dict(c.fetchall())
+            if 'name' in settings and settings['name']:
+                self.name = settings['name']
+            if 'servicetrip' in settings and settings['servicetrip']:
+                self.servicetrip = settings['servicetrip']
+            if 'handrail_flag' in settings:
+                self.handrail_flag = settings['handrail_flag'] == '1'
+
         c.execute(f'''SELECT * FROM ddu''')
         # self.ddu = [self.Busstop_DDU(*i) for i in c.fetchall()]
         ls = c.fetchall()
@@ -1494,8 +1672,117 @@ $stoplist2
 
 
 
-class Hanover_KMB_NEW(HOF_Hanover): #UNUSED, TO BE MERGED INTO BIG CLASS LATER. WIDE ADOPTION NOT YET HAPPENED 
-    Holdthehandrail = True # able to be changed by user
-    HOFCLASS = HOF_Hanover
-    def __init__(self, name: str = 'Default', servicetrip: str = 'Not In Service') -> None:
-        self.HOFCLASS = HOF_Hanover(name, servicetrip)
+
+class HOF_Gorba(HOF_Hanover):
+    """HOF class for Gorba LED destination displays (GX7767 Gorba KMB)."""
+
+    class Termini:
+        def __init__(self, allexit: bool = False, eric: str = "", destination: str = "", busfull: str = "", flip: list[str] = [], RTID: str = "", direction: int | None = None) -> None:
+            self._allexit = '_allexit' if allexit else ''
+            self._gorba = gorbacode(eric, direction=direction)
+            self._eric = self._gorba
+            self._destination = destination
+            self._busfull = busfull
+            self._flip = flip
+            self._flup4 = flip[3] if len(flip) > 3 else ''
+            self._flup3 = flip[2] if len(flip) > 2 else ''
+            self._flup2 = flip[1] if len(flip) > 1 else ''
+            self._flup1 = flip[0] if len(flip) > 0 else ''
+            self._RTID = self._gorba.orig if RTID == '' else RTID
+
+        @property
+        def gorba(self) -> str:
+            return str(self._gorba.orig)
+
+        @gorba.setter
+        def gorba(self, value: str) -> None:
+            self._gorba = gorbacode(value)
+            self._eric = self._gorba
+            self._RTID = self._gorba.orig
+
+        @property
+        def eric(self) -> str:
+            return self.gorba
+
+        @eric.setter
+        def eric(self, value: str) -> None:
+            self.gorba = value
+
+        @property
+        def RTID(self) -> str:
+            return f'{self._gorba.orig.rjust(6, "0")}+{self._destination}'
+
+        @property
+        def direction(self) -> int:
+            return getattr(self._gorba, 'direction', 0)
+
+        @direction.setter
+        def direction(self, value: int) -> None:
+            self._gorba = gorbacode(self._gorba.route, direction=int(value))
+            self._eric = self._gorba
+            self._RTID = self._gorba.orig
+
+        def set_gorba(self, route: str, direction: int = 0) -> None:
+            self._gorba = gorbacode(route, direction=int(direction))
+            self._eric = self._gorba
+            self._RTID = self._gorba.orig
+
+        @property
+        def destination(self) -> str:
+            return str(self._destination)
+
+        @destination.setter
+        def destination(self, value: str) -> None:
+            self._destination = value
+
+        @property
+        def busfull(self) -> str:
+            return str(self._busfull)
+
+        @busfull.setter
+        def busfull(self, value: str) -> None:
+            self._busfull = value
+
+        @property
+        def flip(self) -> list[str]:
+            return [a.replace("/", "\\") for a in self._flip]
+
+        @flip.setter
+        def flip(self, value: list[str]) -> None:
+            self._flip = value
+            self._flup4 = value[3] if len(value) > 3 else ''
+            self._flup3 = value[2] if len(value) > 2 else ''
+            self._flup2 = value[1] if len(value) > 1 else ''
+            self._flup1 = value[0] if len(value) > 0 else ''
+
+        @property
+        def allexit(self) -> str:
+            return self._allexit
+
+        @allexit.setter
+        def allexit(self, value: bool) -> None:
+            self._allexit = '_allexit' if value else ''
+
+        def __str__(self) -> str:
+            return HOF_Hanover.termini_template.substitute(
+                allexit=self._allexit,
+                eric=self._gorba.retstr(),
+                destination=self._destination,
+                busfull=self._busfull,
+                pai_page4=self._flup4,
+                pai_page3=self._flup3,
+                pai_page2=self._flup2,
+                pai_page1=self._flup1,
+                RTID=self.RTID
+            )
+
+    def add_terminus(self, allexit: bool = False, eric: str = "", destination: str = "", busfull: str = "", flip: list[str] = [], RTID: str = "", direction: int | None = None) -> None:
+        self.termini.append(self.Termini(allexit, eric, destination, busfull, flip, RTID, direction=direction))
+
+
+def create_hof(hof_type: str = "Hanover", name: str = 'Default', servicetrip: str = 'Not In Service') -> HOF_Hanover:
+    if str(hof_type).strip().lower() == 'gorba':
+        return HOF_Gorba(name, servicetrip)
+    return HOF_Hanover(name, servicetrip)
+
+

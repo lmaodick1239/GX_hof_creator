@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'Welc.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.2
+## Created by: Qt User Interface Compiler version 6.12.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -16,10 +16,11 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
-    QLabel, QMainWindow, QMenu, QMenuBar,
-    QPushButton, QSizePolicy, QSplitter, QStatusBar,
-    QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
+    QHBoxLayout, QLabel, QMainWindow, QMenu,
+    QMenuBar, QPushButton, QSizePolicy, QSpacerItem,
+    QSplitter, QStatusBar, QTabWidget, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -76,6 +77,38 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.splitter_2, 0, 0, 1, 1)
 
+        self.horizontalLayout_type = QHBoxLayout()
+        self.horizontalLayout_type.setObjectName(u"horizontalLayout_type")
+        self.horizontalSpacer_type_l = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_type.addItem(self.horizontalSpacer_type_l)
+
+        self.label_type = QLabel(self.centralwidget)
+        self.label_type.setObjectName(u"label_type")
+        font1 = QFont()
+        font1.setPointSize(12)
+        self.label_type.setFont(font1)
+
+        self.horizontalLayout_type.addWidget(self.label_type)
+
+        self.comboBox_type = QComboBox(self.centralwidget)
+        self.comboBox_type.addItem("")
+        self.comboBox_type.addItem("")
+        self.comboBox_type.setObjectName(u"comboBox_type")
+        self.comboBox_type.setMinimumSize(QSize(160, 28))
+        font2 = QFont()
+        font2.setPointSize(11)
+        self.comboBox_type.setFont(font2)
+
+        self.horizontalLayout_type.addWidget(self.comboBox_type)
+
+        self.horizontalSpacer_type_r = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_type.addItem(self.horizontalSpacer_type_r)
+
+
+        self.gridLayout.addLayout(self.horizontalLayout_type, 1, 0, 1, 1)
+
         self.splitter = QSplitter(self.centralwidget)
         self.splitter.setObjectName(u"splitter")
         self.splitter.setOrientation(Qt.Orientation.Horizontal)
@@ -106,7 +139,7 @@ class Ui_MainWindow(object):
 
         self.splitter.addWidget(self.horizontalLayoutWidget)
 
-        self.gridLayout.addWidget(self.splitter, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.splitter, 2, 0, 1, 1)
 
 
         self.verticalLayout.addLayout(self.gridLayout)
@@ -154,6 +187,10 @@ class Ui_MainWindow(object):
         self.actionGenerate_8w_6w_LCD.setText(QCoreApplication.translate("MainWindow", u"Generate 8w,6w", None))
         self.actionGenerate_DPIPv2.setText(QCoreApplication.translate("MainWindow", u"Generate DPIPv2", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"GX Hof Creator", None))
+        self.label_type.setText(QCoreApplication.translate("MainWindow", u"Display System:", None))
+        self.comboBox_type.setItemText(0, QCoreApplication.translate("MainWindow", u"Hanover", None))
+        self.comboBox_type.setItemText(1, QCoreApplication.translate("MainWindow", u"Gorba", None))
+
         self.pushButton_4.setText(QCoreApplication.translate("MainWindow", u"New Project", None))
         self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"Import from Map", None))
         self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"Open a GHC .db", None))

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'PrefWin.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.0
+## Created by: Qt User Interface Compiler version 6.12.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -63,6 +63,8 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.label_4, 3, 1, 1, 1)
 
         self.comboBox = QComboBox(self.centralwidget)
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
         self.comboBox.setObjectName(u"comboBox")
 
         self.gridLayout.addWidget(self.comboBox, 3, 2, 1, 1)
@@ -122,6 +124,9 @@ class Ui_MainWindow(object):
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"Preferences", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Hof Name", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"HOF Version (classname)", None))
+        self.comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"Hanover", None))
+        self.comboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Gorba", None))
+
         self.label.setText(QCoreApplication.translate("MainWindow", u"Project Folder Location", None))
         self.toolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.label_5.setText(QCoreApplication.translate("MainWindow", u"GPS Mode?", None))

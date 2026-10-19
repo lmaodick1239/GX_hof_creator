@@ -22,8 +22,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 
-from HOF import HOF_Hanover as HOF_KMBHan
-from HOF import ericcode
+from HOF import HOF_Hanover as HOF_KMBHan, HOF_Gorba, ericcode, gorbacode, create_hof
 from stop_name_encoder import (
     decode_stop_name,
     encode_stop_name,
@@ -355,6 +354,29 @@ class Main(QMainWindow):
             # Read actual handrail flag from HOF class and sync with checkbox
             self.ui.checkBox.setChecked(not Main.hof_class.handrail_flag)
             self.ui.checkBox.stateChanged.connect(self.update_handrail_flag)
+            current_type = "Gorba" if isinstance(Main.hof_class, HOF_Gorba) else "Hanover"
+            self.ui.comboBox.setCurrentText(current_type)
+            self.ui.comboBox.currentTextChanged.connect(self.set_hof_type)
+
+        def set_hof_type(self, text: str):
+            if text == "Gorba" and not isinstance(Main.hof_class, HOF_Gorba):
+                new_hof = HOF_Gorba(Main.hof_class.name, Main.hof_class.servicetrip)
+                new_hof.ddu = Main.hof_class.ddu
+                new_hof.stopreporter = Main.hof_class.stopreporter
+                new_hof.infosystem = Main.hof_class.infosystem
+                new_hof.handrail_flag = getattr(Main.hof_class, "handrail_flag", True)
+                for t in Main.hof_class.termini:
+                    new_hof.add_terminus(t.allexit == "_allexit", t.eric, t.destination, t.busfull, t.flip, t.RTID)
+                Main.hof_class = new_hof
+            elif text == "Hanover" and isinstance(Main.hof_class, HOF_Gorba):
+                new_hof = HOF_KMBHan(Main.hof_class.name, Main.hof_class.servicetrip)
+                new_hof.ddu = Main.hof_class.ddu
+                new_hof.stopreporter = Main.hof_class.stopreporter
+                new_hof.infosystem = Main.hof_class.infosystem
+                new_hof.handrail_flag = getattr(Main.hof_class, "handrail_flag", True)
+                for t in Main.hof_class.termini:
+                    new_hof.add_terminus(t.allexit == "_allexit", t.eric, t.destination, t.busfull, t.flip, t.RTID)
+                Main.hof_class = new_hof
 
         def update_handrail_flag(self):
             Main.hof_class.handrail_flag = not self.ui.checkBox.isChecked()
@@ -384,11 +406,12 @@ class Main(QMainWindow):
             self.ui.pushButton_4.clicked.connect(self.create_blank_hof)
 
         def open_db(self):
-            Main.hof_class = HOF_KMBHan()
             file = QFileDialog.getOpenFileName(
                 self, "Open Database", Main.default_directory(), "Database Files (*.db)"
             )
             if file[0]:
+                hof_type = HOF_KMBHan.detect_hof_type_from_db(file[0])
+                Main.hof_class = create_hof(hof_type)
                 Main.hof_class.load_from_db(file[0])
                 Main.opened_windows.append(Main.HOFView())
                 Main.opened_windows[-1].show()
@@ -397,11 +420,12 @@ class Main(QMainWindow):
                 self.close()
 
         def open_hof(self):
-            Main.hof_class = HOF_KMBHan()
             file = QFileDialog.getOpenFileName(
                 self, "Open HOF", Main.default_directory(), "HOF Files (*.hof)"
             )
             if file[0]:
+                hof_type = self.ui.comboBox_type.currentText() if hasattr(self.ui, 'comboBox_type') else "Hanover"
+                Main.hof_class = create_hof(hof_type)
                 a = Main.hof_class.load_from_hof(file[0])
                 parse_warnings: list[str] = []
                 if isinstance(a, int):
@@ -427,7 +451,8 @@ class Main(QMainWindow):
             )
             if file:
                 try:
-                    Main.hof_class = HOF_KMBHan()
+                    hof_type = self.ui.comboBox_type.currentText() if hasattr(self.ui, 'comboBox_type') else "Hanover"
+                    Main.hof_class = create_hof(hof_type)
                     Main.hof_class.new_from_map(file)
                     Main.opened_windows.append(Main.HOFView())
                     Main.opened_windows[-1].show()
@@ -437,7 +462,8 @@ class Main(QMainWindow):
                     QMessageBox.critical(self, "Error", f"Failed to import map:\n{str(e)}")
 
         def create_blank_hof(self):
-            Main.hof_class = HOF_KMBHan()
+            hof_type = self.ui.comboBox_type.currentText() if hasattr(self.ui, 'comboBox_type') else "Hanover"
+            Main.hof_class = create_hof(hof_type)
             # Main.hof_class.create_blank_hof()
             Main.opened_windows.append(Main.HOFView())
             Main.opened_windows[-1].show()
@@ -793,17 +819,17 @@ class Main(QMainWindow):
                 if win is not self:
                     win.close()
             Main.opened_windows.clear()
-            # Reset the HOF_KMBHan instance
-            Main.hof_class = HOF_KMBHan()
-            # Explicitly clear termini and other lists
-            Main.hof_class.termini.clear()
-            Main.hof_class.stopreporter.clear()
-            Main.hof_class.ddu.clear()
-            Main.hof_class.infosystem.clear()
             file = QFileDialog.getOpenFileName(
                 self, "Open Database", "C:\\", "Database Files (*.db)"
             )
             if file[0]:
+                hof_type = HOF_KMBHan.detect_hof_type_from_db(file[0])
+                Main.hof_class = create_hof(hof_type)
+                # Explicitly clear termini and other lists
+                Main.hof_class.termini.clear()
+                Main.hof_class.stopreporter.clear()
+                Main.hof_class.ddu.clear()
+                Main.hof_class.infosystem.clear()
                 Main.hof_class.load_from_db(file[0])
                 self.close()
                 Main.opened_windows.append(Main.HOFView())
@@ -2071,14 +2097,41 @@ class Main(QMainWindow):
             super().__init__(parent)
             self.ui = AddTermini_UI()
             self.ui.setupUi(self)
-            self.ui.lineEdit.setText(eric)
+            self.curindex = curindex
+
+            is_gorba = isinstance(Main.hof_class, HOF_Gorba)
+            self.ui.label_dir.setVisible(is_gorba)
+            self.ui.spinBox_dir.setVisible(is_gorba)
+
+            if is_gorba:
+                self.ui.label_5.setText("Route (e.g: 289A):")
+                if curindex < len(Main.hof_class.termini):
+                    t = Main.hof_class.termini[curindex]
+                    self.ui.lineEdit.setText(getattr(t._gorba, 'route', eric))
+                    self.ui.spinBox_dir.setValue(getattr(t, 'direction', 0))
+                else:
+                    g = gorbacode(eric)
+                    self.ui.lineEdit.setText(g.route)
+                    self.ui.spinBox_dir.setValue(g.direction)
+                self.ui.lineEdit.textChanged.connect(self.on_route_text_changed)
+            else:
+                self.ui.label_5.setText("Eric String (e.g: 289AY)")
+                self.ui.lineEdit.setText(eric)
+
             self.ui.lineEdit_2.setText(Destination)
             self.ui.lineEdit_3.setText(busfull)
-            self.curindex = curindex
             self.ui.toolButton.clicked.connect(self.select_flip)
             # self.ui.tableWidget.setItem
             for i in range(len(disps)):
                 self.ui.tableWidget.setItem(i, 0, QTableWidgetItem(disps[i]))
+
+        def on_route_text_changed(self, text: str):
+            if isinstance(Main.hof_class, HOF_Gorba):
+                g = gorbacode(text)
+                if g.direction != 0 and g.route != text:
+                    self.ui.spinBox_dir.blockSignals(True)
+                    self.ui.spinBox_dir.setValue(g.direction)
+                    self.ui.spinBox_dir.blockSignals(False)
 
         def select_flip(self):
             files = QFileDialog.getOpenFileNames(
@@ -2109,7 +2162,19 @@ class Main(QMainWindow):
                 count += 1
 
         def closeEvent(self, event):
-            Main.hof_class.termini[self.curindex].eric = self.ui.lineEdit.text()
+            if isinstance(Main.hof_class, HOF_Gorba):
+                route = self.ui.lineEdit.text().strip()
+                g = gorbacode(route)
+                base_route = g.route if g.direction != 0 else route
+                direction = self.ui.spinBox_dir.value()
+                t = Main.hof_class.termini[self.curindex]
+                if hasattr(t, 'set_gorba'):
+                    t.set_gorba(base_route, direction)
+                else:
+                    t.eric = base_route
+                    t.direction = direction
+            else:
+                Main.hof_class.termini[self.curindex].eric = self.ui.lineEdit.text()
             Main.hof_class.termini[
                 self.curindex
             ].destination = self.ui.lineEdit_2.text()
@@ -2127,8 +2192,9 @@ class Main(QMainWindow):
                 disps = disps[::-1]
             print(disps)
             Main.hof_class.termini[self.curindex].flip = disps
-            self.sig.connect(Main.opened_windows[0].update_listviews)
-            self.sig.emit(self.curindex, 3)
+            if Main.opened_windows and hasattr(Main.opened_windows[0], "update_listviews"):
+                self.sig.connect(Main.opened_windows[0].update_listviews)
+                self.sig.emit(self.curindex, 3)
             event.accept()
 
     class EricGuesser(QMainWindow):
