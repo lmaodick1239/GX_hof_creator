@@ -19,6 +19,7 @@ A comprehensive tool for creating and editing HOF files for buses in the OMSI (O
 
 - **Python 3.12+** (tested on Python 3.12)
 - **PySide6** (Qt6 framework for GUI)
+- **Pillow** (Image processing for destination display generation)
 - **SQLite3** (included with Python)
 
 ## Installation
@@ -55,7 +56,7 @@ A comprehensive tool for creating and editing HOF files for buses in the OMSI (O
 Build Linux executable on Linux; PyInstaller does not cross-compile:
 
 ```bash
-python3 -m pip install -r requirements.txt pyinstaller
+python3 -m pip install -r requirements.txt
 python3 build.py
 ./dist/MainWindow
 ```

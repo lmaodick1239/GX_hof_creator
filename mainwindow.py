@@ -10,6 +10,7 @@ from pathlib import Path
 from collections import deque
 from threading import Thread
 from time import sleep
+from typing import Any, Dict
 
 from PySide6.QtCore import QStandardPaths, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QBrush, QCloseEvent, QColor, QKeySequence, QShortcut
@@ -23,12 +24,6 @@ from PySide6.QtWidgets import (
 )
 
 from HOF import HOF_Hanover as HOF_KMBHan, HOF_Gorba, ericcode, gorbacode, create_hof
-from stop_name_encoder import (
-    decode_stop_name,
-    encode_stop_name,
-    get_ui_values_from_name,
-    update_stop_name_from_ui,
-)
 from ui_AddBusStop import Ui_MainWindow as AddBusStop_UI
 from ui_AddDDU import Ui_MainWindow as AddDDU_UI
 from ui_AddRouteEntry import Ui_MainWindow as AddRouteEntry_UI
@@ -47,6 +42,121 @@ from ui_Welc import Ui_MainWindow as Entrypoint_Ui_MainWindow
 
 global build_with_genLED
 build_with_genLED = False
+
+
+class StopNameProperties:
+    """Properties encoded in a bus stop name's prefixes and suffix."""
+
+    def __init__(self):
+        self.autoskip: bool = False
+        self.w8w6_different: bool = False
+        self.chi_pages: int = 1
+        self.eng_multiline: bool = False
+        self.base_name: str = ""
+
+
+def decode_stop_name(stop_name: str) -> StopNameProperties:
+    props = StopNameProperties()
+    name = stop_name
+
+    if name.endswith("!"):
+        props.eng_multiline = True
+        name = name[:-1]
+
+    if name.startswith("_!~"):
+        props.autoskip = True
+        props.w8w6_different = True
+        props.chi_pages = 3
+        name = name[3:]
+    elif name.startswith("_~"):
+        props.autoskip = True
+        props.w8w6_different = True
+        props.chi_pages = 2
+        name = name[2:]
+    elif name.startswith("_!!"):
+        props.autoskip = True
+        props.chi_pages = 3
+        name = name[3:]
+    elif name.startswith("_!"):
+        props.autoskip = True
+        props.chi_pages = 2
+        name = name[2:]
+    elif name.startswith("!~"):
+        props.w8w6_different = True
+        props.chi_pages = 3
+        name = name[2:]
+    elif name.startswith("~"):
+        props.w8w6_different = True
+        props.chi_pages = 2
+        name = name[1:]
+    elif name.startswith("!!"):
+        props.chi_pages = 3
+        name = name[2:]
+    elif name.startswith("!"):
+        props.chi_pages = 2
+        name = name[1:]
+    elif name.startswith("_"):
+        props.autoskip = True
+        name = name[1:]
+
+    props.base_name = name
+    return props
+
+
+def encode_stop_name(
+    base_name: str,
+    autoskip: bool,
+    w8w6_different: bool,
+    chi_pages: int,
+    eng_at_count: int,
+) -> str:
+    name = base_name
+    prefix = ""
+
+    if w8w6_different:
+        if chi_pages == 2:
+            prefix = "~"
+        elif chi_pages == 3:
+            prefix = "!~"
+        if autoskip:
+            prefix = "_" + prefix
+    else:
+        if chi_pages == 2:
+            prefix = "!"
+        elif chi_pages == 3:
+            prefix = "!!"
+        if autoskip:
+            prefix = "_" + prefix
+
+    suffix = "!" if eng_at_count > 2 else ""
+    return prefix + name + suffix
+
+
+def update_stop_name_from_ui(
+    current_name: str,
+    autoskip: bool,
+    w8w6_different: bool,
+    chi_pages: int,
+    eng_display: str,
+) -> str:
+    props = decode_stop_name(current_name)
+    return encode_stop_name(
+        props.base_name,
+        autoskip,
+        w8w6_different,
+        chi_pages,
+        eng_display.count("@"),
+    )
+
+
+def get_ui_values_from_name(stop_name: str, eng_display: str = "") -> Dict[str, Any]:
+    props = decode_stop_name(stop_name)
+    return {
+        "autoskip": props.autoskip,
+        "w8w6_different": props.w8w6_different,
+        "chi_pages": props.chi_pages,
+        "base_name": props.base_name,
+    }
 
 
 def split(a, n):
