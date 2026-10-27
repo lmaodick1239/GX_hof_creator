@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .vscode/
+.vs/
 .git/
 .venv/
 *.hof
@@ -15,3 +16,6 @@ dist/
 build.py
 *.spec
 *.exe
+*.log
+*_log.txt
+.pytest_cache/
