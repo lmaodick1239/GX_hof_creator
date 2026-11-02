@@ -890,17 +890,18 @@ $stoplist2
                     # hof_entry.infosystem[-1].busstop_list1_class.busstops = lines[start_idx:end_idx_1]
                     # hof_entry.infosystem[-1].busstop_list2_class.busstops = lines[end_idx_1:end_idx_2]
                     # i = end_idx_2
-                    if len(self.infosystem) > 0 and self.infosystem[-1].route == lines[i + 2]:
+                    if len(hof_entry.infosystem) > 0 and hof_entry.infosystem[-1].route == lines[i + 2] and len(hof_entry.infosystem[-1].busstop_list2_class._busstops) == 0:
                         
                         startidx = i + 3
                         endidx = startidx + int(lines[i + 1])
                         # print(lines[startidx:endidx])
-                        self.infosystem[-1].busstop_list2_class.busstops = lines[startidx:endidx]
-                        self.infosystem[-1].busstop_list2 = lines[startidx:endidx]
-                        self.infosystem[-1]._busstop_list2._busstops= lines[startidx:endidx]
-                        # print(self.infosystem[-1].busstop_list2_class.db_export)
+                        bsl2 = lines[startidx:endidx]
+                        hof_entry.infosystem[-1].busstop_list2_class.busstops = bsl2
+                        hof_entry.infosystem[-1].busstop_list2 = bsl2
+                        hof_entry.infosystem[-1]._busstop_list2._busstops= bsl2
+                        # print(hof_entry.infosystem[-1].busstop_list2_class.db_export)
                         
-                        self.infosystem[-1].trip2_class.Destination = lines[startidx:endidx][-2] if len(lines[startidx:endidx]) > 1 else ""
+                        hof_entry.infosystem[-1].trip2_class.Destination = bsl2[-2] if len(bsl2) > 1 else (bsl2[0] if len(bsl2) == 1 else "")
                         i = endidx
                     else:
                         busstop_count_1 = int(lines[i + 1])
@@ -911,7 +912,7 @@ $stoplist2
                         hof_entry.add_infosystem(
                             single_or_dual_dir=True,
                             route=rtno,
-                            dir1=bsl1[-2],
+                            dir1=bsl1[-2] if len(bsl1) > 1 else (bsl1[0] if len(bsl1) == 1 else ""),
                             dir2="",
                             bustoplist1=bsl1,
                             bustoplist2=[]

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'HOFView.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.0
+## Created by: Qt User Interface Compiler version 6.12.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -56,6 +56,8 @@ class Ui_MainWindow(object):
         self.actionReset_Busstop_List_IDs.setObjectName(u"actionReset_Busstop_List_IDs")
         self.actionEdit_En_Masse = QAction(MainWindow)
         self.actionEdit_En_Masse.setObjectName(u"actionEdit_En_Masse")
+        self.actionDeduplicate_Stops = QAction(MainWindow)
+        self.actionDeduplicate_Stops.setObjectName(u"actionDeduplicate_Stops")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout_3 = QGridLayout(self.centralwidget)
@@ -459,7 +461,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 729, 21))
+        self.menubar.setGeometry(QRect(0, 0, 729, 23))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         self.menuMap = QMenu(self.menubar)
@@ -491,6 +493,7 @@ class Ui_MainWindow(object):
         self.menuEdit.addAction(self.actionEric_Guesser)
         self.menuEdit.addAction(self.actionReset_Busstop_List_IDs)
         self.menuEdit.addAction(self.actionEdit_En_Masse)
+        self.menuEdit.addAction(self.actionDeduplicate_Stops)
 
         self.retranslateUi(MainWindow)
 
@@ -519,6 +522,7 @@ class Ui_MainWindow(object):
 #endif // QT_CONFIG(whatsthis)
         self.actionReset_Busstop_List_IDs.setText(QCoreApplication.translate("MainWindow", u"Reset Busstop List IDs", None))
         self.actionEdit_En_Masse.setText(QCoreApplication.translate("MainWindow", u"Edit En Masse", None))
+        self.actionDeduplicate_Stops.setText(QCoreApplication.translate("MainWindow", u"Deduplicate Stops", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Termini", None))
         self.pushButton_13.setText(QCoreApplication.translate("MainWindow", u"Duplicate", None))
         self.pushButton_8.setText(QCoreApplication.translate("MainWindow", u"Remove", None))

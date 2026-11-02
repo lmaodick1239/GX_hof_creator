@@ -628,6 +628,7 @@ class Main(QMainWindow):
             self.ui.actionOpen_global_cfg.triggered.connect(
                 lambda: Main.raise_unimplemented()
             )
+            self.ui.actionDeduplicate_Stops.triggered.connect(self.deduplicate_stops)
             self.ui.actionOpen_HOF.triggered.connect(self.reopen_hof)
             self.ui.actionOpen_Project_Folder.triggered.connect(self.open_db)
             self.ui.actionOpen_TTL_for_Route.triggered.connect(
@@ -1101,6 +1102,34 @@ class Main(QMainWindow):
                 self.ui.listWidget_2.addItems(
                     [i.route for i in Main.hof_class.infosystem]
                 )
+
+        def deduplicate_stops(self):
+            set_seen = set()
+            duplicates = []
+            for stop in Main.hof_class.stopreporter:
+                if (stop.name,stop.EngDisplay,stop.ChiSeconds,stop.EngSeconds) in set_seen:
+                    duplicates.append(stop)
+                else:
+                    set_seen.add((stop.name,stop.EngDisplay,stop.ChiSeconds,stop.EngSeconds))
+            for dup in duplicates:
+                index = Main.hof_class.stopreporter.index(dup)
+                self.ui.listWidget_3.takeItem(index)
+                Main.hof_class.stopreporter.remove(dup)
+            self.reload_bslist_id()
+            if duplicates:
+                QMessageBox.information(
+                    self,
+                    "Deduplication Complete",
+                    f"Removed {len(duplicates)} duplicate bus stops.",
+                    QMessageBox.Ok,
+                )  # type: ignore
+            else:
+                QMessageBox.information(
+                    self,
+                    "Deduplication Complete",
+                    "No duplicate bus stops found.",
+                    QMessageBox.Ok,
+                )  # type: ignore
 
         @Slot(None, int, int)  # type: ignore
         def update_listviews(self, index: int, func_in: int) -> int:

@@ -981,7 +981,7 @@ $stoplist2
         ls = c.fetchall()
         for index, i in enumerate(ls):
             ls[index] = list(i)
-            print(ls[index])
+            # print(ls[index])
             ls[index][4] = ls[index][4].strip().split('\n') if isinstance(ls[index][4], str) else []
             ls[index][5] = ls[index][5].strip().split('\n') if isinstance(ls[index][5], str) else []
             ls[index][6] = ls[index][6].strip().split('\n') if isinstance(ls[index][6], str) else []
@@ -1272,7 +1272,7 @@ $stoplist2
                     else:
                         eric1 = re.sub(r'^0+(?=\d|\w)', '', param1[0].strip()) # remove leading zeros for ericcode
                         out1 = param1[1].strip()
-                    print(eric1,lines[i + 2],lines[i + 3],lines[i + 4 : i + 8][::-1],out1)
+                    # print(eric1,lines[i + 2],lines[i + 3],lines[i + 4 : i + 8][::-1],out1)
                     hof_entry.add_terminus(
                         False,
                         eric1,
@@ -1395,29 +1395,24 @@ $stoplist2
                         i += 6
                     
                 elif line == "[infosystem_busstop_list]":
-                    # busstop_count_1 = int(lines[i + 1])
-                    # busstop_count_2 = int(lines[i + 2])
-                    # start_idx = i + 3
-                    # end_idx_1 = start_idx + busstop_count_1
-                    # end_idx_2 = end_idx_1 + busstop_count_2
-                    # hof_entry.infosystem[-1].busstop_list1_class.busstops = lines[start_idx:end_idx_1]
-                    # hof_entry.infosystem[-1].busstop_list2_class.busstops = lines[end_idx_1:end_idx_2]
-                    # i = end_idx_2
-                    if len(self.infosystem) > 0 and self.infosystem[-1].route == lines[i + 2]:
+                    print(f"{lines[i + 1]} bus stops for route {lines[i + 2]}")
+                    print(f"Current infosystem entries: {len(hof_entry.infosystem)}")
+                    print(f"Current route: {lines[i + 2]}, {hof_entry.infosystem[-1].route if len(hof_entry.infosystem) > 0 else 'N/A'} {hof_entry.infosystem[-1].route == lines[i + 2] if len(hof_entry.infosystem) > 0 else 'N/A'}")
+                    if len(hof_entry.infosystem) > 0 and hof_entry.infosystem[-1].route == lines[i + 2] and len(hof_entry.infosystem[-1].busstop_list2_class._busstops) == 0:
+                        print(f"{hof_entry.infosystem[-1]}, {lines[i + 1]} bus stops for route {lines[i + 2]}, {hof_entry.infosystem[-1].route == lines[i + 2]}")
                         
                         startidx = i + 3
                         endidx = startidx + _safe_non_negative_int(lines[i + 1], "infosystem_busstop_count", i + 1)
-                        # print(lines[startidx:endidx])
-                        self.infosystem[-1].busstop_list2_class.busstops = lines[startidx:endidx]
-                        self.infosystem[-1].busstop_list2 = lines[startidx:endidx]
-                        self.infosystem[-1]._busstop_list2._busstops= lines[startidx:endidx]
-                        self.infosystem[-1].busstop_list2_class.bustops_withid = ["" for _ in range(len(lines[startidx:endidx]))] # reset the busstop ids
-                        # print(self.infosystem[-1].busstop_list2_class.db_export)
-                        
-                        self.infosystem[-1].trip2_class.Destination = lines[startidx:endidx][-2] if len(lines[startidx:endidx]) > 1 else ""
+                        bsl2 = lines[startidx:endidx]
+                        hof_entry.infosystem[-1].busstop_list2_class.busstops = bsl2
+                        hof_entry.infosystem[-1].busstop_list2 = bsl2
+                        hof_entry.infosystem[-1]._busstop_list2._busstops = bsl2
+                        hof_entry.infosystem[-1].busstop_list2_class.bustops_withid = ["" for _ in range(len(bsl2))] # reset the busstop ids
+                        hof_entry.infosystem[-1].trip2_class.Destination = bsl2[-2] if len(bsl2) > 1 else (bsl2[0] if len(bsl2) == 1 else "")
+                        hof_entry.fill_busttoplist_with_id()
                         i = endidx
                     else:
-                        busstop_count_1 = _safe_non_negative_int(lines[i + 1], "infosystem_busstop_count", i + 1) - 1
+                        busstop_count_1 = _safe_non_negative_int(lines[i + 1], "infosystem_busstop_count", i + 1)
                         rtno = lines[i + 2]
                         startidx = i + 3
                         endidx = startidx + busstop_count_1
@@ -1425,7 +1420,7 @@ $stoplist2
                         hof_entry.add_infosystem(
                             single_or_dual_dir=True,
                             route=rtno,
-                            dir1=bsl1[-2],
+                            dir1=bsl1[-2] if len(bsl1) > 1 else (bsl1[0] if len(bsl1) == 1 else ""),
                             dir2="",
                             bustoplist1=bsl1,
                             bustoplist2=[]

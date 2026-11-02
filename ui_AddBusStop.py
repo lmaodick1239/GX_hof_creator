@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'AddBusStop.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.9.0
+## Created by: Qt User Interface Compiler version 6.12.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -119,7 +119,7 @@ class Ui_MainWindow(object):
 
         self.spinBox_3 = QSpinBox(self.centralwidget)
         self.spinBox_3.setObjectName(u"spinBox_3")
-        self.spinBox_3.setMinimum(-100)
+        self.spinBox_3.setMinimum(-1)
 
         self.verticalLayout.addWidget(self.spinBox_3)
 
