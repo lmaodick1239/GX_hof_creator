@@ -263,7 +263,7 @@ $termini
 [end]
 ''')
     
-    termini_template_v2 = Template('''$allexit\t$eric\t$destination\t$busfull\t$pai_page4\t$pai_page3\t$pai_page2\t$pai_page1\t$RTID''')
+    termini_template_v2 = Template('''$allexit$eric\t$destination\t$busfull\t$pai_page4\t$pai_page3\t$pai_page2\t$pai_page1\t$RTID''')
     
     stopreporter_full_template_v2 = Template('''[addbusstop_list]
 $ls_ddu
@@ -616,7 +616,7 @@ $stoplist2
             def db_export_withid(self) -> str:
                 return "\n".join(self.bustops_withid)
             def __str__(self) -> str:
-                return HOF_Hanover.busstop_list_template.substitute(amount_of_stops=self._amount_of_stops + 1, rtno=self._rtno, busstops=self.busstops)
+                return HOF_Hanover.busstop_list_template.substitute(amount_of_stops=self._amount_of_stops, rtno=self._rtno, busstops=self.busstops)
             def __repr__(self) -> list[int | str | list[str]]:
                 return [self._amount_of_stops, self._rtno, self._busstops]
             def __iter__(self) -> list[str]:
@@ -1031,11 +1031,14 @@ $stoplist2
                 if not isinstance(raw_value, str) or len(raw_value) < 1:
                     _add_warning(field_name, str(raw_value), 0, line_index)
                     return 0
-                suffix = raw_value[-1]
-                if not suffix.isdigit():
+                match = re.search(r"(\d+)\s*$", raw_value.strip())
+                if match is None:
                     # _add_warning(field_name, str(raw_value), 0, line_index) # Allow non-digit suffixes (e.g., "NoSound") but treat them as 0q
                     return 0
-                return _safe_non_negative_int(suffix, field_name, line_index)
+                return _safe_non_negative_int(match.group(1), field_name, line_index)
+
+            def _ddu_direction(raw_value: str) -> str:
+                return re.sub(r"\s*\d+\s*$", "", raw_value).strip()
 
             def _safe_price(
                 raw_value: str,
@@ -1046,12 +1049,14 @@ $stoplist2
             ) -> float:
                 if not isinstance(raw_value, str):
                     _add_warning(field_name, str(raw_value), fallback_value, line_index)
-                    return fallback_value
+                    if not allow_missing_prefix:
+                        return fallback_value
                 if not raw_value.startswith('$'):
                     if raw_value and not allow_missing_prefix:
                         # _add_warning(field_name, raw_value, fallback_value, line_index) # Allow values without '$' but log a warning
                         pass
-                    return fallback_value
+                    if not allow_missing_prefix:
+                        return fallback_value
                 try:
                     value = float(raw_value.replace(",", ".").lstrip('$'))
                 except (TypeError, ValueError):
@@ -1089,7 +1094,25 @@ $stoplist2
                 elif line == "[servicetrip]":
                     hof_entry.servicetrip = lines[i + 1]
                     i += 2
+                elif line == '[addterminus_list]':
+                    tls_v2 = True
+                    bsl_v2 = False
+                    i += 1
+                    continue
+                elif line == '[addbusstop_list]':
+                    bsl_v2 = True
+                    tls_v2 = False
+                    i += 1
+                    continue
+                elif line == '[end]':
+                    bsl_v2 = False
+                    tls_v2 = False
+                    i += 1
+                    continue
                 elif tls_v2:
+                    if not line:
+                        i += 1
+                        continue
                     datum = line.split('\t')
                     conversion = [True if datum[0] == '{ALLEX}' else False]
                     conversion.extend(datum[1:]) # type: ignore
@@ -1118,6 +1141,9 @@ $stoplist2
                     i +=1
                     continue
                 elif bsl_v2:
+                    if not line:
+                        i += 1
+                        continue
                     datum = line.split('\t')
                     if len(datum) < 2:
                         i += 1
@@ -1127,10 +1153,23 @@ $stoplist2
                     if len(stop_name) < 1:
                         i += 1
                         continue
-                    if len(stop_name) >= 5 or (len(time_parts := datum[1].split()) <= 2 and len(time_parts) > 0 and time_parts[0].isdigit()):
+                    is_ddu_row = (
+                        len(datum) == 5
+                        and datum[1].split()
+                        and datum[1].split()[-1].isdigit()
+                        and datum[2].split()
+                        and datum[2].split()[-1].isdigit()
+                    ) or (
+                        len(datum) == 7
+                        and datum[2].split()
+                        and datum[2].split()[-1].isdigit()
+                        and datum[4].split()
+                        and datum[4].split()[-1].isdigit()
+                    )
+                    if len(datum) == 6 or (len(datum) == 5 and datum[2].split() and datum[2].split()[0].isdigit()):
                         # parse full stopreporter
                         chi_sec, eng_sec, man_sec = 0, 0, 0
-                        time_parts = datum[1].split()
+                        time_parts = datum[2].split()
                         if time_parts == ["NoSound"]:
                             chi_sec, eng_sec, man_sec = 0,0,0
                         else:
@@ -1154,15 +1193,6 @@ $stoplist2
                         #     eng_sec = int(time_parts[1])
                         # if len(time_parts) == 3:
                         #     man_sec = int(time_parts[2]) - chi_sec - eng_sec
-                        inbound_price = -1.0
-                        if len(datum) > 2:
-                            inbound_price = _safe_price(
-                                datum[2],
-                                "Inbound_sectionfare",
-                                i,
-                                -1.0,
-                                allow_missing_prefix=False,
-                            )
                         outbound_price = -1.0
                         if len(datum) > 3:
                             outbound_price = _safe_price(
@@ -1170,52 +1200,62 @@ $stoplist2
                                 "Outbound_sectionfare",
                                 i,
                                 -1.0,
-                                allow_missing_prefix=False,
+                                allow_missing_prefix=True,
+                            )
+                        inbound_price = -1.0
+                        if len(datum) > 4:
+                            inbound_price = _safe_price(
+                                datum[4],
+                                "Inbound_sectionfare",
+                                i,
+                                -1.0,
+                                allow_missing_prefix=True,
                             )
                         hof_entry.add_stopreporter(
                             stop_name,
-                            datum[4] if len(datum) > 4 else "",
+                            datum[1] if len(datum) > 1 else "",
                             chi_sec,
                             eng_sec,
                             man_sec,
-                            inbound_price,
                             outbound_price,
+                            inbound_price,
                             comment=datum[5] if len(datum) > 5 else ""
                         )
                         
-                        i += 6
-                    else:
+                        i += 1
+                    elif is_ddu_row:
                         # parse DDU
                         outbound_dir_raw = datum[1] if len(datum) > 1 else ""
                         inbound_dir_raw = datum[2] if len(datum) > 2 else ""
                         sectiontimes_Y = _safe_ddu_section(outbound_dir_raw, "sectiontimes_Y", i)
                         sectiontimes_Z = _safe_ddu_section(inbound_dir_raw, "sectiontimes_Z", i)
-                        inbound_price = _safe_price(
+                        outbound_price = _safe_price(
                             datum[3] if len(datum) > 3 else "",
-                            "Inbound_price",
+                            "Outbound_price",
                             i,
                             0.0,
                             allow_missing_prefix=True,
                         )
-                        outbound_price = _safe_price(
+                        inbound_price = _safe_price(
                             datum[4] if len(datum) > 4 else "",
-                            "Outbound_price",
+                            "Inbound_price",
                             i,
                             0.0,
                             allow_missing_prefix=True,
                         )
                         hof_entry.add_ddu(
                             stop_name,
-                            outbound_dir_raw[:-1].strip(),
-                            inbound_dir_raw[:-1].strip(),
-                            inbound_price,
+                            _ddu_direction(outbound_dir_raw),
+                            _ddu_direction(inbound_dir_raw),
                             outbound_price,
+                            inbound_price,
                             sectiontimes_Y,
                             sectiontimes_Z
                         )
                         
-                        i += 5
-                        continue
+                        i += 1
+                    else:
+                        i += 1
                 elif line == '[addterminus_list]':
                     # bsl_v2 = True
                     tls_v2 = True
@@ -1223,10 +1263,6 @@ $stoplist2
                     # tls_v2 = True
                     bsl_v2 = True
                     
-                elif line == '[end]':
-                    bsl_v2 = False
-                    tls_v2 = False
-                    continue
                 elif line == "[addterminus]":
                     # param = lines[i].replace("[addterminus]", "").strip()
                     param1 = lines[i + 8].split("+")
@@ -1293,21 +1329,21 @@ $stoplist2
                                     if man_sec < 0:
                                         _add_warning("ManSeconds", time_parts[2], 0, i + 3)
                                         man_sec = 0
-                        inbound_price = -1.0
-                        inbound_price = _safe_price(
-                            lines[i + 4],
-                            "Inbound_sectionfare",
-                            i + 4,
-                            -1.0,
-                            allow_missing_prefix=False,
-                        )
                         outbound_price = -1.0
                         outbound_price = _safe_price(
-                            lines[i + 5],
+                            lines[i + 4],
                             "Outbound_sectionfare",
+                            i + 4,
+                            -1.0,
+                            allow_missing_prefix=True,
+                        )
+                        inbound_price = -1.0
+                        inbound_price = _safe_price(
+                            lines[i + 5],
+                            "Inbound_sectionfare",
                             i + 5,
                             -1.0,
-                            allow_missing_prefix=False,
+                            allow_missing_prefix=True,
                         )
                         if len(lines[i + 2]) > 0 and ((lines[i + 2][-1] in ['T','Y','Z','R'] or len(lines[i + 2]) <= 3 ) and lines[i + 2][:-1].strip().isdigit() and (time_parts != ["NoSound"] and len(time_parts) > 0 and (not time_parts[0].isnumeric() and len(time_parts) <= 3))):
                             # Telargo! Not supported
@@ -1318,11 +1354,11 @@ $stoplist2
                             chi_sec,
                             eng_sec,
                             man_sec,
-                            inbound_price,
-                            outbound_price
+                            outbound_price,
+                            inbound_price
                         )
                         
-                        i += 7
+                        i += 1
                     else:
                         # parse DDU
                         # print(lines[i])
@@ -1349,8 +1385,8 @@ $stoplist2
                         )
                         hof_entry.add_ddu(
                             stop_name,
-                            lines[i + 2][:-1].strip(),
-                            lines[i + 3][:-1].strip(),
+                            _ddu_direction(lines[i + 2]),
+                            _ddu_direction(lines[i + 3]),
                             inbound_price,
                             outbound_price,
                             sectiontimes_Y,
